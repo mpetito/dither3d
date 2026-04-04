@@ -1,0 +1,30 @@
+import { useAppState } from '../state/AppContext';
+
+export function DownloadButton() {
+  const { outputBytes, status } = useAppState();
+
+  const handleDownload = () => {
+    if (!outputBytes) return;
+    const blob = new Blob([outputBytes], {
+      type: 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'full-spectrum-output.3mf';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const disabled = !outputBytes || status === 'processing';
+
+  return (
+    <button
+      onClick={handleDownload}
+      disabled={disabled}
+      className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+    >
+      Download 3MF
+    </button>
+  );
+}

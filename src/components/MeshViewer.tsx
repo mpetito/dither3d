@@ -11,10 +11,11 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 function MeshGeometry() {
-  const { meshData } = useAppState();
-  if (!meshData) return null;
+  const { meshData, processedMeshData } = useAppState();
+  const displayData = processedMeshData ?? meshData;
+  if (!displayData) return null;
 
-  const { vertices, faces, faceColors, defaultFilament, faceCount } = meshData;
+  const { vertices, faces, faceColors, defaultFilament, faceCount } = displayData;
 
   const geometry = useMemo(() => {
     // Unindexed geometry: 3 vertices per face for flat shading + per-face colors

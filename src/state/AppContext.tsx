@@ -8,6 +8,7 @@ import {
 import type { ThreeMFData } from '../lib/threemf';
 import type { FullSpectrumConfig } from '../lib/config';
 import type { PipelineResult } from '../lib/pipeline';
+export type { ThreeMFData };
 import { defaultConfig } from '../lib/config';
 
 // ── State shape ─────────────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ export interface AppState {
   config: FullSpectrumConfig;
   processedHex: string[] | null;
   result: PipelineResult | null;
+  processedMeshData: ThreeMFData | null;
   status: 'idle' | 'loading' | 'processing' | 'ready' | 'error';
   error: string | null;
   outputBytes: Uint8Array | null;
@@ -35,6 +37,7 @@ export type AppAction =
       type: 'PROCESS_SUCCESS';
       result: PipelineResult;
       outputBytes: Uint8Array;
+      processedMeshData: ThreeMFData;
     }
   | { type: 'PROCESS_ERROR'; error: string }
   | { type: 'RESET' };
@@ -47,6 +50,7 @@ const initialState: AppState = {
   config: defaultConfig(0.1),
   processedHex: null,
   result: null,
+  processedMeshData: null,
   status: 'idle',
   error: null,
   outputBytes: null,
@@ -69,6 +73,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         // Clear previous processing results
         processedHex: null,
         result: null,
+        processedMeshData: null,
         outputBytes: null,
       };
 
@@ -87,6 +92,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         status: 'ready',
         result: action.result,
         outputBytes: action.outputBytes,
+        processedMeshData: action.processedMeshData,
         error: null,
       };
 
