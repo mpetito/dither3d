@@ -6,9 +6,9 @@
 
 | Phase | Spec | Description | Status |
 | ----- | ---- | ----------- | ------ |
-| 1 | [001](../001-core-library/) | Core TypeScript Library — port all processing modules | In Progress |
-| 2 | 002 | Web Worker Parallelism for Subdivision | Not Started |
-| 3 | 003 | React UI Shell & 3D Preview | Not Started |
-| 4 | 004 | Palette Configuration UI | Not Started |
-| 5 | 005 | Processing Pipeline Integration & Download | Not Started |
-| 6 | 006 | Polish, Performance & Deployment | Not Started |
+| 1 | [001](../001-core-library/) | Core TypeScript Library — port all processing modules | Complete |
+| 2 | 002 | Web Worker Parallelism for Subdivision | Complete |
+| 3 | 003 | React UI Shell & 3D Preview | Complete |
+| 4 | 004 | Palette Configuration UI | Complete |
+| 5 | 005 | Processing Pipeline Integration & Download | Complete |
+| 6 | 006 | Polish, Performance & Deployment | Complete |

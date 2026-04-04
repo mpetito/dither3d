@@ -9,6 +9,7 @@ import { ConfigImportExport } from './components/ConfigImportExport';
 import { DownloadButton } from './components/DownloadButton';
 import { OutputStats } from './components/OutputStats';
 import { useProcessing } from './hooks/useProcessing';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
   useProcessing();
@@ -29,7 +30,9 @@ function AppContent() {
       </aside>
       {/* Right panel — 3D preview */}
       <main className="flex-1 relative">
-        <MeshViewer />
+        <ErrorBoundary>
+          <MeshViewer />
+        </ErrorBoundary>
       </main>
     </div>
   );

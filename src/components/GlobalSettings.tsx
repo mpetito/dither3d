@@ -16,11 +16,12 @@ export function GlobalSettings() {
       </h2>
       <div className="flex flex-col gap-3">
         {/* Layer height */}
-        <label className="flex flex-col gap-1">
+        <label htmlFor="layer-height" className="flex flex-col gap-1">
           <span className="text-xs text-gray-600 dark:text-gray-400">
             Layer height: {config.layerHeightMm.toFixed(2)} mm
           </span>
           <input
+            id="layer-height"
             type="range"
             min={0.04}
             max={0.2}
@@ -32,9 +33,10 @@ export function GlobalSettings() {
         </label>
 
         {/* Target format */}
-        <label className="flex flex-col gap-1">
+        <label htmlFor="target-format" className="flex flex-col gap-1">
           <span className="text-xs text-gray-600 dark:text-gray-400">Target format</span>
           <select
+            id="target-format"
             value={config.targetFormat}
             onChange={(e) => update({ targetFormat: e.target.value })}
             className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm"
@@ -46,8 +48,9 @@ export function GlobalSettings() {
         </label>
 
         {/* Boundary split */}
-        <label className="flex items-center gap-2 text-sm">
+        <label htmlFor="boundary-split" className="flex items-center gap-2 text-sm">
           <input
+            id="boundary-split"
             type="checkbox"
             checked={config.boundarySplit}
             onChange={(e) => update({ boundarySplit: e.target.checked })}
@@ -58,11 +61,12 @@ export function GlobalSettings() {
 
         {/* Max split depth */}
         {config.boundarySplit && (
-          <label className="flex flex-col gap-1">
+          <label htmlFor="max-split-depth" className="flex flex-col gap-1">
             <span className="text-xs text-gray-600 dark:text-gray-400">
               Max split depth: {config.maxSplitDepth}
             </span>
             <input
+              id="max-split-depth"
               type="range"
               min={1}
               max={15}

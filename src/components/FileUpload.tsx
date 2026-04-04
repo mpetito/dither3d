@@ -56,6 +56,8 @@ export function FileUpload() {
 
   return (
     <div
+      role="button"
+      aria-label="Upload 3MF file"
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
@@ -70,6 +72,8 @@ export function FileUpload() {
         ref={inputRef}
         type="file"
         accept=".3mf,.stl"
+        aria-label="Choose a 3MF or STL file"
+        aria-describedby="file-upload-hint"
         className="hidden"
         onChange={onInputChange}
       />
@@ -90,7 +94,7 @@ export function FileUpload() {
       </svg>
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <p className="text-sm text-gray-500" aria-live="polite">Loading…</p>
       ) : fileName && meshData ? (
         <div className="text-center">
           <p className="text-sm font-medium truncate max-w-[14rem]">
@@ -103,7 +107,7 @@ export function FileUpload() {
         </div>
       ) : (
         <div className="text-center">
-          <p className="text-sm font-medium">Drop a .3mf file here</p>
+          <p className="text-sm font-medium" id="file-upload-hint">Drop a .3mf file here</p>
           <p className="text-xs text-gray-500">or click to browse</p>
         </div>
       )}
