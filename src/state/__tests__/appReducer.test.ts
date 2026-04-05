@@ -137,3 +137,101 @@ describe('appReducer', () => {
         expect(next).toBe(state);
     });
 });
+
+describe('appReducer – new state fields', () => {
+    it('SET_INPUT_FILENAME sets inputFilename', () => {
+        const next = appReducer(initialState, {
+            type: 'SET_INPUT_FILENAME',
+            filename: 'my-model.3mf',
+        });
+        expect(next.inputFilename).toBe('my-model.3mf');
+    });
+
+    it('SET_FILAMENT_COLORS sets filamentColors', () => {
+        const colors = ['#FF0000', '#00FF00', '#0000FF'];
+        const next = appReducer(initialState, {
+            type: 'SET_FILAMENT_COLORS',
+            colors,
+        });
+        expect(next.filamentColors).toEqual(colors);
+    });
+
+    it('SET_PROGRESS sets progress', () => {
+        const progress = { stage: 'Painting', done: 5, total: 10 };
+        const next = appReducer(initialState, {
+            type: 'SET_PROGRESS',
+            progress,
+        });
+        expect(next.progress).toEqual(progress);
+    });
+
+    it('SET_PROGRESS clears progress when null', () => {
+        const prev: AppState = {
+            ...initialState,
+            progress: { stage: 'Done', done: 10, total: 10 },
+        };
+        const next = appReducer(prev, { type: 'SET_PROGRESS', progress: null });
+        expect(next.progress).toBeNull();
+    });
+
+    it('PROCESS_START initializes progress', () => {
+        const prev: AppState = { ...initialState, status: 'ready' };
+        const next = appReducer(prev, { type: 'PROCESS_START' });
+        expect(next.progress).toEqual({ stage: 'Initializing', done: 0, total: 0 });
+    });
+
+    it('PROCESS_SUCCESS clears progress', () => {
+        const prev: AppState = {
+            ...initialState,
+            status: 'processing',
+            progress: { stage: 'Painting', done: 5, total: 10 },
+        };
+        const next = appReducer(prev, {
+            type: 'PROCESS_SUCCESS',
+            result: mockResult,
+            outputBytes: new Uint8Array([1]),
+            layerColorData: mockLayerColorData,
+        });
+        expect(next.progress).toBeNull();
+    });
+
+    it('PROCESS_ERROR clears progress', () => {
+        const prev: AppState = {
+            ...initialState,
+            progress: { stage: 'Painting', done: 3, total: 10 },
+        };
+        const next = appReducer(prev, {
+            type: 'PROCESS_ERROR',
+            error: 'fail',
+        });
+        expect(next.progress).toBeNull();
+    });
+
+    it('UPLOAD_SUCCESS clears inputFilename', () => {
+        const prev: AppState = {
+            ...initialState,
+            status: 'loading',
+            inputFilename: 'old-file.3mf',
+        };
+        const next = appReducer(prev, {
+            type: 'UPLOAD_SUCCESS',
+            meshData: mockMeshData,
+            rawFileData: new ArrayBuffer(10),
+        });
+        expect(next.inputFilename).toBeNull();
+    });
+
+    it('RESET returns to initial state including new fields', () => {
+        const modified: AppState = {
+            ...initialState,
+            status: 'ready',
+            inputFilename: 'test.3mf',
+            filamentColors: ['#FF0000'],
+            progress: { stage: 'Done', done: 10, total: 10 },
+        };
+        const next = appReducer(modified, { type: 'RESET' });
+        expect(next).toEqual(initialState);
+        expect(next.inputFilename).toBeNull();
+        expect(next.progress).toBeNull();
+    });
+});

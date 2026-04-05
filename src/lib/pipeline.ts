@@ -86,7 +86,7 @@ function buildLayerFilamentMap(
     const mapping = findMapping(config, inputFil);
     const palette: Palette = mapping?.outputPalette ?? defaultCyclicPalette();
 
-    const [layerIndices, regionLayers] = computeRegionLayers(
+    const [, regionLayers] = computeRegionLayers(
       mesh,
       config.layerHeightMm,
       faceIndices,
@@ -144,6 +144,8 @@ export interface ProcessOptions {
   dryRun?: boolean;
   progressCallback?: ProgressCallback;
   signal?: AbortSignal;
+  filamentColors?: string[];
+  pipelineConfig?: Record<string, unknown>;
 }
 
 /**
@@ -274,6 +276,11 @@ export function process(
       faceHex,
       defaultFilament,
       config.targetFormat,
+      {
+        config: options?.pipelineConfig,
+        filamentColors: options?.filamentColors,
+        layerHeight: config.layerHeightMm,
+      },
     );
   }
 
@@ -432,6 +439,11 @@ export async function processAsync(
       faceHex,
       defaultFilament,
       config.targetFormat,
+      {
+        config: options?.pipelineConfig,
+        filamentColors: options?.filamentColors,
+        layerHeight: config.layerHeightMm,
+      },
     );
   }
 

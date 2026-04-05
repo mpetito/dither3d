@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -10,6 +11,7 @@ import type { FullSpectrumConfig } from "../lib/config";
 import type { PipelineResult, LayerColorData } from "../lib/pipeline";
 export type { ThreeMFData };
 import { defaultConfig } from "../lib/config";
+import { FILAMENT_COLORS } from "../constants";
 
 // ── State shape ─────────────────────────────────────────────────────────────
 
@@ -23,6 +25,9 @@ export interface AppState {
   status: "idle" | "loading" | "processing" | "ready" | "error";
   error: string | null;
   outputBytes: Uint8Array | null;
+  inputFilename: string | null;
+  filamentColors: string[];
+  progress: { stage: string; done: number; total: number } | null;
 }
 
 // ── Actions ─────────────────────────────────────────────────────────────────
@@ -40,7 +45,10 @@ export type AppAction =
       layerColorData: LayerColorData;
     }
   | { type: "PROCESS_ERROR"; error: string }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "SET_INPUT_FILENAME"; filename: string }
+  | { type: "SET_FILAMENT_COLORS"; colors: string[] }
+  | { type: "SET_PROGRESS"; progress: { stage: string; done: number; total: number } | null };
 
 // ── Initial state ───────────────────────────────────────────────────────────
 
@@ -54,6 +62,9 @@ const initialState: AppState = {
   status: "idle",
   error: null,
   outputBytes: null,
+  inputFilename: null,
+  filamentColors: [...FILAMENT_COLORS],
+  progress: null,
 };
 
 // ── Reducer ─────────────────────────────────────────────────────────────────
@@ -77,6 +88,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         result: null,
         layerColorData: null,
         outputBytes: null,
+        inputFilename: null,
       };
 
     case "UPLOAD_ERROR":
@@ -86,7 +98,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, config: action.config };
 
     case "PROCESS_START":
-      return { ...state, status: "processing", error: null };
+      return { ...state, status: "processing", error: null, progress: { stage: "Initializing", done: 0, total: 0 } };
 
     case "PROCESS_SUCCESS":
       return {
@@ -96,13 +108,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         outputBytes: action.outputBytes,
         layerColorData: action.layerColorData,
         error: null,
+        progress: null,
       };
 
     case "PROCESS_ERROR":
-      return { ...state, status: "error", error: action.error };
+      return { ...state, status: "error", error: action.error, progress: null };
 
     case "RESET":
       return initialState;
+
+    case "SET_INPUT_FILENAME":
+      return { ...state, inputFilename: action.filename };
+
+    case "SET_FILAMENT_COLORS":
+      return { ...state, filamentColors: action.colors };
+
+    case "SET_PROGRESS":
+      return { ...state, progress: action.progress };
 
     default:
       return state;

@@ -1,12 +1,34 @@
 import { useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../state/AppContext';
 import { processAsync } from '../lib/pipeline';
+import type { FullSpectrumConfig } from '../lib/config';
+
+function configToJson(config: FullSpectrumConfig): Record<string, unknown> {
+  return {
+    layer_height_mm: config.layerHeightMm,
+    target_format: config.targetFormat,
+    color_mappings: config.colorMappings.map(cm => ({
+      input_filament: cm.inputFilament,
+      output_palette: cm.outputPalette.type === 'cyclic'
+        ? { type: 'cyclic', pattern: [...cm.outputPalette.pattern] }
+        : {
+            type: 'gradient',
+            stops: (cm.outputPalette as { stops: readonly { t: number; filament: number }[] }).stops.map(
+              s => [s.t, s.filament],
+            ),
+          },
+    })),
+    boundary_split: config.boundarySplit,
+    max_split_depth: config.maxSplitDepth,
+    boundary_strategy: config.boundaryStrategy,
+  };
+}
 
 export function useProcessing() {
-    const { rawFileData, config, meshData, status } = useAppState();
+    const { rawFileData, config, meshData, status, filamentColors } = useAppState();
     const dispatch = useAppDispatch();
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-    const abortRef = useRef<AbortController>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         // Don't process if no mesh loaded or currently loading
@@ -25,9 +47,18 @@ export function useProcessing() {
 
             dispatch({ type: 'PROCESS_START' });
 
+            const progressCallback = (stage: string, done: number, total: number) => {
+                dispatch({ type: 'SET_PROGRESS', progress: { stage, done, total } });
+            };
+
             try {
                 const [result, outputBytes, layerColorData] = await processAsync(
-                    rawFileData, config, { signal: controller.signal },
+                    rawFileData, config, {
+                      signal: controller.signal,
+                      progressCallback,
+                      filamentColors,
+                      pipelineConfig: configToJson(config),
+                    },
                 );
                 if (outputBytes) {
                     dispatch({ type: 'PROCESS_SUCCESS', result, outputBytes, layerColorData });

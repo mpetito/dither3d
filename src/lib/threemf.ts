@@ -30,14 +30,36 @@ const RELS_XML = `\
     Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
 </Relationships>`;
 
-function configXml(defaultFilament: number): string {
-  return `\
-<?xml version="1.0" encoding="UTF-8"?>
-<config>
-  <object id="1">
-    <metadata type="object" key="extruder" value="${defaultFilament}"/>
-  </object>
-</config>`;
+interface ConfigXmlOptions {
+  defaultFilament: number;
+  filamentColors?: string[];
+  layerHeight?: number;
+}
+
+function configXml(options: ConfigXmlOptions): string {
+  const { defaultFilament, filamentColors, layerHeight } = options;
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<config>\n`;
+  xml += `  <object id="1">\n`;
+  xml += `    <metadata type="object" key="extruder" value="${defaultFilament}"/>\n`;
+  xml += `  </object>\n`;
+
+  if (layerHeight !== undefined) {
+    xml += `  <plate>\n`;
+    xml += `    <metadata key="layer_height" value="${layerHeight}"/>\n`;
+    xml += `    <metadata key="initial_layer_height" value="${layerHeight * 2}"/>\n`;
+    xml += `  </plate>\n`;
+  }
+
+  if (filamentColors && filamentColors.length > 0) {
+    for (let i = 0; i < filamentColors.length; i++) {
+      xml += `  <filament id="${i + 1}">\n`;
+      xml += `    <metadata key="display_color" value="${filamentColors[i]}"/>\n`;
+      xml += `  </filament>\n`;
+    }
+  }
+
+  xml += `</config>`;
+  return xml;
 }
 
 // ── Error ────────────────────────────────────────────────────────────────────
@@ -58,6 +80,10 @@ export interface ThreeMFData {
   faceCount: number;
   faceColors: Map<number, number>;  // face_index → 1-based filament
   defaultFilament: number;
+  filamentColors?: string[];
+  layerHeight?: number;
+  initialLayerHeight?: number;
+  fullSpectrumConfig?: Record<string, unknown>;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -200,6 +226,74 @@ function parseDefaultFilament(entries: Record<string, Uint8Array>): number {
     }
   }
   return 1;
+}
+
+/**
+ * Parse filament colors and layer height from slicer config metadata.
+ */
+function parseSlicerMetadata(entries: Record<string, Uint8Array>): {
+  filamentColors?: string[];
+  layerHeight?: number;
+  initialLayerHeight?: number;
+} {
+  const parser = new DOMParser();
+  const result: { filamentColors?: string[]; layerHeight?: number; initialLayerHeight?: number } = {};
+
+  for (const name of Object.keys(entries)) {
+    const lower = name.toLowerCase();
+    if (!lower.includes('slic3r_pe_model.config') && !lower.includes('model_settings.config')) {
+      continue;
+    }
+
+    try {
+      const configDoc = parser.parseFromString(decodeText(entries[name]), 'application/xml');
+
+      // Parse filament colors
+      const filamentEls = configDoc.getElementsByTagName('filament');
+      if (filamentEls.length > 0) {
+        const colors: string[] = [];
+        for (let i = 0; i < filamentEls.length; i++) {
+          const el = filamentEls[i];
+          const id = parseInt(el.getAttribute('id') ?? '0', 10);
+          const metaEls = el.getElementsByTagName('metadata');
+          for (let j = 0; j < metaEls.length; j++) {
+            if (metaEls[j].getAttribute('key') === 'display_color') {
+              const color = metaEls[j].getAttribute('value');
+              if (color && id > 0) {
+                while (colors.length < id) colors.push('');
+                colors[id - 1] = color;
+              }
+            }
+          }
+        }
+        if (colors.length > 0) {
+          result.filamentColors = colors;
+        }
+      }
+
+      // Parse layer height from plate metadata
+      const plateEls = configDoc.getElementsByTagName('plate');
+      for (let i = 0; i < plateEls.length; i++) {
+        const metaEls = plateEls[i].getElementsByTagName('metadata');
+        for (let j = 0; j < metaEls.length; j++) {
+          const key = metaEls[j].getAttribute('key');
+          const val = metaEls[j].getAttribute('value');
+          if (key === 'layer_height' && val) {
+            const lh = parseFloat(val);
+            if (!isNaN(lh)) result.layerHeight = lh;
+          }
+          if (key === 'initial_layer_height' && val) {
+            const ilh = parseFloat(val);
+            if (!isNaN(ilh)) result.initialLayerHeight = ilh;
+          }
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -348,6 +442,22 @@ export function read3mf(data: ArrayBuffer, flatten = false): ThreeMFData {
   // Parse default filament
   const defaultFilament = parseDefaultFilament(entries);
 
+  // Parse additional metadata
+  const slicerMeta = parseSlicerMetadata(entries);
+  let fullSpectrumConfig: Record<string, unknown> | undefined;
+
+  // Check for full-spectrum config JSON
+  for (const name of Object.keys(entries)) {
+    if (name.toLowerCase() === 'metadata/full-spectrum.config.json') {
+      try {
+        fullSpectrumConfig = JSON.parse(decodeText(entries[name])) as Record<string, unknown>;
+      } catch {
+        // Silently ignore malformed config
+      }
+      break;
+    }
+  }
+
   return {
     vertices,
     faces,
@@ -355,6 +465,8 @@ export function read3mf(data: ArrayBuffer, flatten = false): ThreeMFData {
     faceCount,
     faceColors,
     defaultFilament,
+    ...slicerMeta,
+    fullSpectrumConfig,
   };
 }
 
@@ -372,6 +484,12 @@ export function read3mf(data: ArrayBuffer, flatten = false): ThreeMFData {
  * @param targetFormat - "prusaslicer", "bambu", or "both"
  * @returns Uint8Array of the ZIP bytes
  */
+export interface Write3mfMetadata {
+  config?: Record<string, unknown>;
+  filamentColors?: string[];
+  layerHeight?: number;
+}
+
 export function write3mf(
   vertices: Float64Array,
   faces: Uint32Array,
@@ -380,6 +498,7 @@ export function write3mf(
   faceColors: string[],
   defaultFilament = 1,
   targetFormat = 'both',
+  metadata?: Write3mfMetadata,
 ): Uint8Array {
   if (faceColors.length !== faceCount) {
     throw new ThreeMFError(
@@ -463,12 +582,24 @@ export function write3mf(
   const xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(doc);
 
   // Pack into ZIP
-  return zipSync({
+  const zipEntries: Record<string, Uint8Array> = {
     '[Content_Types].xml': strToU8(CONTENT_TYPES_XML),
     '_rels/.rels': strToU8(RELS_XML),
     '3D/3dmodel.model': strToU8(xmlString),
-    'Metadata/Slic3r_PE_model.config': strToU8(configXml(defaultFilament)),
-  });
+    'Metadata/Slic3r_PE_model.config': strToU8(configXml({
+      defaultFilament,
+      filamentColors: metadata?.filamentColors,
+      layerHeight: metadata?.layerHeight,
+    })),
+  };
+
+  if (metadata?.config) {
+    zipEntries['Metadata/full-spectrum.config.json'] = strToU8(
+      JSON.stringify(metadata.config, null, 2),
+    );
+  }
+
+  return zipSync(zipEntries);
 }
 
 /** Format a coordinate value similar to Python's `:.9g`. */

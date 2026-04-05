@@ -1,17 +1,21 @@
 import { useAppState } from '../state/AppContext';
 
 export function DownloadButton() {
-  const { outputBytes, status } = useAppState();
+  const { outputBytes, status, inputFilename } = useAppState();
+
+  const downloadName = inputFilename
+    ? `${inputFilename}_full-spectrum.3mf`
+    : 'full-spectrum-output.3mf';
 
   const handleDownload = () => {
     if (!outputBytes) return;
-    const blob = new Blob([outputBytes], {
+    const blob = new Blob([outputBytes.slice()], {
       type: 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml',
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'full-spectrum-output.3mf';
+    a.download = downloadName;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -24,7 +28,7 @@ export function DownloadButton() {
       disabled={disabled}
       className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
-      Download 3MF
+      {outputBytes ? `Download ${downloadName}` : 'Download 3MF'}
     </button>
   );
 }
