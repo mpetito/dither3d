@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Center, Bounds } from "@react-three/drei";
 import * as THREE from "three";
 import { useAppState } from "../state/AppContext";
-import { FILAMENT_COLORS } from "../constants";
 import type { LayerColorData } from "../lib/pipeline";
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -12,14 +11,14 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 /** Build a 1D DataTexture mapping layer index → RGB from layer color data. */
-function buildLayerTexture(layerColorData: LayerColorData): THREE.DataTexture {
+function buildLayerTexture(layerColorData: LayerColorData, filamentColors: readonly string[]): THREE.DataTexture {
   const { layerFilamentMap, totalLayers } = layerColorData;
   const width = Math.max(totalLayers, 1);
   const data = new Uint8Array(width * 4); // RGBA
 
   for (let i = 0; i < width; i++) {
     const filament = layerFilamentMap.get(i) ?? 0;
-    const hex = FILAMENT_COLORS[filament] ?? FILAMENT_COLORS[0];
+    const hex = filamentColors[filament] ?? filamentColors[0];
     const [r, g, b] = hexToRgb(hex);
     data[i * 4] = Math.round(r * 255);
     data[i * 4 + 1] = Math.round(g * 255);
@@ -75,14 +74,13 @@ const LAYER_FRAGMENT_SHADER = /* glsl */ `
 `;
 
 function MeshGeometry() {
-  const { meshData, layerColorData } = useAppState();
+  const { meshData, layerColorData, filamentColors } = useAppState();
 
   const geometry = useMemo(() => {
     if (!meshData) return null;
-    const { vertices, faces, faceColors, defaultFilament, faceCount } = meshData;
+    const { vertices, faces, faceCount } = meshData;
 
     const posArr = new Float32Array(faceCount * 9);
-    const colArr = new Float32Array(faceCount * 9);
 
     for (let f = 0; f < faceCount; f++) {
       const i0 = faces[f * 3];
@@ -100,28 +98,34 @@ function MeshGeometry() {
       posArr[f * 9 + 6] = vertices[i2 * 3];
       posArr[f * 9 + 7] = vertices[i2 * 3 + 1];
       posArr[f * 9 + 8] = vertices[i2 * 3 + 2];
-
-      const filament = faceColors.get(f) ?? defaultFilament;
-      const hex = FILAMENT_COLORS[filament] ?? FILAMENT_COLORS[0];
-      const [r, g, b] = hexToRgb(hex);
-
-      colArr[f * 9] = r;
-      colArr[f * 9 + 1] = g;
-      colArr[f * 9 + 2] = b;
-      colArr[f * 9 + 3] = r;
-      colArr[f * 9 + 4] = g;
-      colArr[f * 9 + 5] = b;
-      colArr[f * 9 + 6] = r;
-      colArr[f * 9 + 7] = g;
-      colArr[f * 9 + 8] = b;
     }
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
-    geo.setAttribute("color", new THREE.BufferAttribute(colArr, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(faceCount * 9), 3));
     geo.computeVertexNormals();
     return geo;
   }, [meshData]);
+
+  // Update vertex colors separately — avoids full geometry rebuild on color changes
+  useEffect(() => {
+    if (!geometry || !meshData) return;
+
+    const { faceColors, defaultFilament, faceCount } = meshData;
+    const colorAttr = geometry.getAttribute("color") as THREE.BufferAttribute;
+
+    for (let f = 0; f < faceCount; f++) {
+      const filament = faceColors.get(f) ?? defaultFilament;
+      const hex = filamentColors[filament] ?? filamentColors[0];
+      const [r, g, b] = hexToRgb(hex);
+      const base = f * 3;
+      colorAttr.setXYZ(base, r, g, b);
+      colorAttr.setXYZ(base + 1, r, g, b);
+      colorAttr.setXYZ(base + 2, r, g, b);
+    }
+
+    colorAttr.needsUpdate = true;
+  }, [geometry, meshData, filamentColors]);
 
   const shaderMaterial = useMemo(() => {
     if (
@@ -132,7 +136,7 @@ function MeshGeometry() {
       return null;
     }
 
-    const tex = buildLayerTexture(layerColorData);
+    const tex = buildLayerTexture(layerColorData, filamentColors);
 
     return new THREE.ShaderMaterial({
       vertexShader: LAYER_VERTEX_SHADER,
@@ -144,7 +148,7 @@ function MeshGeometry() {
         uLayerColorTex: { value: tex },
       },
     });
-  }, [layerColorData]);
+  }, [layerColorData, filamentColors]);
 
   // Dispose previous shader material + texture when replaced or on unmount
   const prevMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -181,8 +185,24 @@ function MeshGeometry() {
   );
 }
 
+/** Triggers a single re-render whenever scene inputs change (demand-driven rendering). */
+function SceneInvalidator({ filamentColors }: { filamentColors?: string[] }) {
+  const { invalidate } = useThree();
+  const { meshData, layerColorData } = useAppState();
+
+  useEffect(() => {
+    invalidate();
+  }, [meshData, layerColorData, invalidate]);
+
+  useEffect(() => {
+    invalidate();
+  }, [filamentColors, invalidate]);
+
+  return <OrbitControls makeDefault onChange={() => invalidate()} />;
+}
+
 export function MeshViewer() {
-  const { meshData } = useAppState();
+  const { meshData, filamentColors } = useAppState();
 
   if (!meshData) {
     return (
@@ -195,6 +215,7 @@ export function MeshViewer() {
   return (
     <Canvas
       className="absolute inset-0"
+      frameloop="demand"
       camera={{ position: [0, 0, 100], fov: 50, near: 0.1, far: 10000 }}
     >
       <ambientLight intensity={0.5} />
@@ -207,7 +228,7 @@ export function MeshViewer() {
           </group>
         </Center>
       </Bounds>
-      <OrbitControls makeDefault />
+      <SceneInvalidator filamentColors={filamentColors} />
     </Canvas>
   );
 }

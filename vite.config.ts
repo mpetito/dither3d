@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -8,8 +9,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three', '@react-three/fiber', '@react-three/drei'],
+        manualChunks(id) {
+          if (
+            id.includes('/node_modules/three/') ||
+            id.includes('/node_modules/@react-three/')
+          ) {
+            return 'three';
+          }
         },
       },
     },

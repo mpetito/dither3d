@@ -4,6 +4,7 @@ import type { ColorMapping, Palette, FullSpectrumConfig } from '../lib/config';
 import { useAppState, useAppDispatch } from '../state/AppContext';
 import { CyclicEditor } from './CyclicEditor';
 import { GradientEditor } from './GradientEditor';
+import { ConfigImportButton } from './ConfigImportExport';
 
 type PaletteType = 'none' | 'cyclic' | 'gradient';
 
@@ -64,9 +65,12 @@ export function PaletteMapper() {
 
   return (
     <section>
-      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-        Color Mappings
-      </h2>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          Color Mappings
+        </h2>
+        <ConfigImportButton />
+      </div>
 
       <div className="flex flex-col gap-2">
         {mappings.map((mapping, i) => (

@@ -57,7 +57,7 @@ export function makeSubdivider(
     globalZMin: number,
     filamentByLayer: Map<number, number>,
     defaultFilament: number,
-    maxDepth: number,
+    _maxDepth: number,
     epsilon: number,
 ): SubdivideFn {
     const invLh = 1.0 / layerHeight;

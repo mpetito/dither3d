@@ -54,7 +54,6 @@ describe('findBoundaryFaces', () => {
 
 describe('makeSubdivider', () => {
   it('produces leaf for flat triangle in single layer', () => {
-    const mesh = makeFlatTriangle();
     const layerHeight = 1.0; // single layer covers everything
     const filamentByLayer = new Map<number, number>([[0, 2]]);
     const epsilon = layerHeight * 0.001;
@@ -71,7 +70,6 @@ describe('makeSubdivider', () => {
   });
 
   it('produces split nodes for multi-layer spanning triangle', () => {
-    const mesh = makeSpanningTriangle();
     const layerHeight = 0.2;
     const filamentByLayer = new Map<number, number>([
       [0, 1], [1, 2], [2, 1], [3, 2], [4, 1],

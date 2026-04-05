@@ -201,7 +201,7 @@ describe('decodeBisectionTree', () => {
 });
 
 describe('bisection round-trip', () => {
-  it.each(WORKED_EXAMPLES)('%s encode→decode', (_desc, tree, _hex) => {
+  it.each(WORKED_EXAMPLES)('%s encode→decode', (_desc, tree) => {
     expect(equalNodes(decodeBisectionTree(encodeBisectionTree(tree)), tree)).toBe(true);
   });
 

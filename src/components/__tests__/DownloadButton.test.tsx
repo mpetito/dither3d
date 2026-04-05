@@ -12,6 +12,6 @@ describe("DownloadButton", () => {
 
   it("renders with correct text", () => {
     renderWithContext(<DownloadButton />);
-    expect(screen.getByText("Download 3MF")).toBeInTheDocument();
+    expect(screen.getByText("Download .3mf")).toBeInTheDocument();
   });
 });

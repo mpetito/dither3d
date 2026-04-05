@@ -26,11 +26,8 @@ function configToJson(config: FullSpectrumConfig): string {
   );
 }
 
-export function ConfigImportExport() {
+export function ConfigExportButton() {
   const { config } = useAppState();
-  const dispatch = useAppDispatch();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const handleExport = () => {
     const json = configToJson(config);
@@ -42,6 +39,21 @@ export function ConfigImportExport() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  return (
+    <button
+      onClick={handleExport}
+      className="w-full px-3 py-1.5 rounded text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+    >
+      Export config
+    </button>
+  );
+}
+
+export function ConfigImportButton() {
+  const dispatch = useAppDispatch();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImport = () => {
     fileInputRef.current?.click();
@@ -63,34 +75,23 @@ export function ConfigImportExport() {
   };
 
   return (
-    <section>
-      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-        Config
-      </h2>
-      <div className="flex gap-2">
-        <button
-          onClick={handleExport}
-          className="px-3 py-1.5 rounded text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700"
-        >
-          Export
-        </button>
-        <button
-          onClick={handleImport}
-          className="px-3 py-1.5 rounded text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          Import
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-      </div>
+    <div className="flex flex-col">
+      <button
+        onClick={handleImport}
+        className="px-2 py-0.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      >
+        Import
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileChange}
+        className="hidden"
+      />
       {error && (
-        <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
-    </section>
+    </div>
   );
 }

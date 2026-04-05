@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useAppDispatch, useAppState } from '../state/AppContext';
 import { read3mf } from '../lib/threemf';
+import { loadConfigFromJson } from '../lib/config';
+import { FILAMENT_COLORS } from '../constants';
 
 export function FileUpload() {
   const dispatch = useAppDispatch();
@@ -17,6 +19,27 @@ export function FileUpload() {
         const data = read3mf(buf, true);
         setFileName(file.name);
         dispatch({ type: 'UPLOAD_SUCCESS', meshData: data, rawFileData: buf });
+        const stem = file.name.replace(/\.3mf$/i, '');
+        dispatch({ type: 'SET_INPUT_FILENAME', filename: stem });
+
+        // Pre-fill from embedded metadata (round-trip support)
+        if (data.fullSpectrumConfig) {
+          try {
+            const config = loadConfigFromJson(JSON.stringify(data.fullSpectrumConfig));
+            dispatch({ type: 'UPDATE_CONFIG', config });
+          } catch {
+            // Ignore invalid embedded config
+          }
+        }
+        if (data.filamentColors && data.filamentColors.length > 0) {
+          const merged: string[] = [...FILAMENT_COLORS];
+          for (let i = 0; i < data.filamentColors.length; i++) {
+            if (data.filamentColors[i]) {
+              merged[i] = data.filamentColors[i];
+            }
+          }
+          dispatch({ type: 'SET_FILAMENT_COLORS', colors: merged });
+        }
       } catch (e) {
         dispatch({
           type: 'UPLOAD_ERROR',
