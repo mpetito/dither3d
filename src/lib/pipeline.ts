@@ -24,6 +24,18 @@ export interface PipelineResult {
   boundaryFacePct: number;
 }
 
+/** Data the shader needs to preview layer-based coloring. */
+export interface LayerColorData {
+  /** Layer index → 1-based filament. */
+  layerFilamentMap: Map<number, number>;
+  /** Global Z minimum (centroid-based, matches bisection encoding). */
+  zMin: number;
+  /** Layer height in model units (mm). */
+  layerHeight: number;
+  /** Total number of layers. */
+  totalLayers: number;
+}
+
 function findMapping(
   config: FullSpectrumConfig,
   inputFilament: number,
@@ -46,7 +58,7 @@ function buildLayerFilamentMap(
   config: FullSpectrumConfig,
   clusters: Map<number, number[]>,
   defaultFilament: number,
-): Map<number, number> {
+): { layerMap: Map<number, number>; globalZMin: number } {
   const lh = config.layerHeightMm;
   const epsilon = lh * LAYER_EPSILON_FACTOR;
 
@@ -122,7 +134,7 @@ function buildLayerFilamentMap(
     }
   }
 
-  return layerMap;
+  return { layerMap, globalZMin };
 }
 
 export type ProgressCallback = (stage: string, done: number, total: number) => void;
@@ -131,6 +143,7 @@ export interface ProcessOptions {
   flatten?: boolean;
   dryRun?: boolean;
   progressCallback?: ProgressCallback;
+  signal?: AbortSignal;
 }
 
 /**
@@ -145,7 +158,7 @@ export function process(
   inputData: ArrayBuffer,
   config: FullSpectrumConfig,
   options?: ProcessOptions,
-): [PipelineResult, Uint8Array | undefined] {
+): [PipelineResult, Uint8Array | undefined, LayerColorData] {
   const flatten = options?.flatten ?? false;
   const dryRun = options?.dryRun ?? false;
   const progressCallback = options?.progressCallback;
@@ -221,19 +234,20 @@ export function process(
     faceHex[i] = fil === defaultFilament ? '' : filamentToHex(fil);
   }
 
+  // Build layer → filament map (used for bisection encoding + preview shader)
+  const { layerMap: layerFilamentMap, globalZMin: syncZMin } = buildLayerFilamentMap(
+    mesh,
+    config,
+    clusters,
+    defaultFilament,
+  );
+
   // Step 6: Bisection encoding for boundary faces
   let boundaryFaceCount = 0;
   if (config.boundarySplit && config.boundaryStrategy === 'bisection') {
     const boundaryProgress = progressCallback
       ? (done: number, total: number) => progressCallback('bisection', done, total)
       : undefined;
-
-    const layerFilamentMap = buildLayerFilamentMap(
-      mesh,
-      config,
-      clusters,
-      defaultFilament,
-    );
 
     const boundaryHex = encodeBoundaryFaces(mesh, faceFilaments, config.layerHeightMm, {
       maxDepth: config.maxSplitDepth,
@@ -263,6 +277,13 @@ export function process(
     );
   }
 
+  const layerColorData: LayerColorData = {
+    layerFilamentMap,
+    zMin: syncZMin,
+    layerHeight: config.layerHeightMm,
+    totalLayers: layerFilamentMap.size,
+  };
+
   const result: PipelineResult = {
     success: true,
     faceCount: nFaces,
@@ -273,7 +294,7 @@ export function process(
     boundaryFacePct,
   };
 
-  return [result, outputBytes];
+  return [result, outputBytes, layerColorData];
 }
 
 /**
@@ -286,10 +307,11 @@ export async function processAsync(
   inputData: ArrayBuffer,
   config: FullSpectrumConfig,
   options?: ProcessOptions,
-): Promise<[PipelineResult, Uint8Array | undefined]> {
+): Promise<[PipelineResult, Uint8Array | undefined, LayerColorData]> {
   const flatten = options?.flatten ?? false;
   const dryRun = options?.dryRun ?? false;
   const progressCallback = options?.progressCallback;
+  const signal = options?.signal;
   const warnings: string[] = [];
 
   // Step 1: Load 3MF
@@ -362,19 +384,21 @@ export async function processAsync(
     faceHex[i] = fil === defaultFilament ? '' : filamentToHex(fil);
   }
 
+  // Build layer → filament map (used for bisection encoding + preview shader)
+  const { layerMap: layerFilamentMap, globalZMin: asyncZMin } = buildLayerFilamentMap(
+    mesh,
+    config,
+    clusters,
+    defaultFilament,
+  );
+
   // Step 6: Bisection encoding for boundary faces (parallel)
+  signal?.throwIfAborted();
   let boundaryFaceCount = 0;
   if (config.boundarySplit && config.boundaryStrategy === 'bisection') {
     const boundaryProgress = progressCallback
       ? (done: number, total: number) => progressCallback('bisection', done, total)
       : undefined;
-
-    const layerFilamentMap = buildLayerFilamentMap(
-      mesh,
-      config,
-      clusters,
-      defaultFilament,
-    );
 
     const boundaryHex = await encodeBoundaryFacesParallel(
       mesh,
@@ -384,6 +408,7 @@ export async function processAsync(
         maxDepth: config.maxSplitDepth,
         progressCallback: boundaryProgress,
         layerFilamentMap,
+        signal,
       },
     );
 
@@ -396,6 +421,7 @@ export async function processAsync(
   const boundaryFacePct = nFaces > 0 ? (boundaryFaceCount / nFaces) * 100.0 : 0.0;
 
   // Step 7: Write output
+  signal?.throwIfAborted();
   let outputBytes: Uint8Array | undefined;
   if (!dryRun) {
     outputBytes = write3mf(
@@ -409,6 +435,13 @@ export async function processAsync(
     );
   }
 
+  const layerColorData: LayerColorData = {
+    layerFilamentMap,
+    zMin: asyncZMin,
+    layerHeight: config.layerHeightMm,
+    totalLayers: layerFilamentMap.size,
+  };
+
   const result: PipelineResult = {
     success: true,
     faceCount: nFaces,
@@ -419,5 +452,5 @@ export async function processAsync(
     boundaryFacePct,
   };
 
-  return [result, outputBytes];
+  return [result, outputBytes, layerColorData];
 }
