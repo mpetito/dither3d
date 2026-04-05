@@ -5,7 +5,7 @@ import { FilamentList } from './components/FilamentList';
 import { ProcessingStatus } from './components/ProcessingStatus';
 import { GlobalSettings } from './components/GlobalSettings';
 import { PaletteMapper } from './components/PaletteMapper';
-import { ConfigImportExport } from './components/ConfigImportExport';
+import { ConfigExportButton } from './components/ConfigImportExport';
 import { FilamentColorEditor } from './components/FilamentColorEditor';
 import { DownloadButton } from './components/DownloadButton';
 import { OutputStats } from './components/OutputStats';
@@ -27,7 +27,6 @@ function AppContent() {
         <FilamentList />
         <GlobalSettings />
         <PaletteMapper />
-        <ConfigImportExport />
         <FilamentColorEditor />
       </aside>
 
@@ -42,6 +41,7 @@ function AppContent() {
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-3 space-y-2">
             <OutputStats />
             <DownloadButton />
+            <ConfigExportButton />
           </div>
         </div>
       </main>
