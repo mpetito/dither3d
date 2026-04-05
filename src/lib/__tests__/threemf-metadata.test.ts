@@ -25,7 +25,7 @@ function make3mfBuffer(model: string, extras?: Record<string, Uint8Array>): Arra
   return zipSync({
     '3D/3dmodel.model': strToU8(model),
     ...extras,
-  }).buffer;
+  }).buffer as ArrayBuffer;
 }
 
 describe('write3mf metadata', () => {
@@ -151,7 +151,7 @@ describe('metadata round-trip', () => {
     const bytes = write3mf(verts, faces, 3, 1, [''], 1, 'both', {
       filamentColors: colors,
     });
-    const data = read3mf(bytes.buffer);
+    const data = read3mf(bytes.buffer as ArrayBuffer);
     expect(data.filamentColors).toEqual(colors);
   });
 
@@ -161,7 +161,7 @@ describe('metadata round-trip', () => {
     const bytes = write3mf(verts, faces, 3, 1, [''], 1, 'both', {
       layerHeight: 0.08,
     });
-    const data = read3mf(bytes.buffer);
+    const data = read3mf(bytes.buffer as ArrayBuffer);
     expect(data.layerHeight).toBe(0.08);
     expect(data.initialLayerHeight).toBe(0.16);
   });
@@ -176,7 +176,7 @@ describe('metadata round-trip', () => {
     const verts = new Float64Array([0, 0, 0, 1, 0, 0, 0, 1, 1]);
     const faces = new Uint32Array([0, 1, 2]);
     const bytes = write3mf(verts, faces, 3, 1, [''], 1, 'both', { config });
-    const data = read3mf(bytes.buffer);
+    const data = read3mf(bytes.buffer as ArrayBuffer);
     expect(data.fullSpectrumConfig).toEqual(config);
   });
 });

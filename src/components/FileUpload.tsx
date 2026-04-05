@@ -32,7 +32,7 @@ export function FileUpload() {
           }
         }
         if (data.filamentColors && data.filamentColors.length > 0) {
-          const merged = [...FILAMENT_COLORS];
+          const merged: string[] = [...FILAMENT_COLORS];
           for (let i = 0; i < data.filamentColors.length; i++) {
             if (data.filamentColors[i]) {
               merged[i] = data.filamentColors[i];

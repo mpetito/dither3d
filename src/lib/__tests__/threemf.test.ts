@@ -34,7 +34,7 @@ function makeMinimal3mf(triangleAttrs = '', modelAttrs = ''): ArrayBuffer {
     ),
   };
   const zipped = zipSync(files);
-  return zipped.buffer.slice(zipped.byteOffset, zipped.byteOffset + zipped.byteLength);
+  return zipped.buffer.slice(zipped.byteOffset, zipped.byteOffset + zipped.byteLength) as ArrayBuffer;
 }
 
 describe('read3mf', () => {
@@ -84,7 +84,7 @@ describe('write3mf → read3mf round-trip', () => {
     const faceColors = ['4']; // filament 1
 
     const zippedBytes = write3mf(vertices, faces, 3, 1, faceColors, 1, 'both');
-    const result = read3mf(zippedBytes.buffer);
+    const result = read3mf(zippedBytes.buffer as ArrayBuffer);
 
     expect(result.vertexCount).toBe(3);
     expect(result.faceCount).toBe(1);
