@@ -25,7 +25,7 @@ export function hexToFilament(hexStr: string): number {
     const normalized = hexStr.trim().toUpperCase();
     const filament = HEX_FILAMENT_TABLE[normalized];
     if (filament !== undefined) return filament;
-    if (normalized.length > 3) {
+    if (normalized.length > 2) {
         throw new Error(`Sub-painted triangle detected: '${hexStr}'`);
     }
     throw new Error(`Invalid filament hex code: '${hexStr}'`);
@@ -40,7 +40,8 @@ export function filamentToHex(filament: number): string {
 }
 
 export function isSubPainted(hexStr: string): boolean {
-    return hexStr.trim().length > 3;
+    const normalized = hexStr.trim().toUpperCase();
+    return normalized.length > 2 && HEX_FILAMENT_TABLE[normalized] === undefined;
 }
 
 // Bisection tree data structures

@@ -225,7 +225,19 @@ function BuildPlateGrid() {
     return grid;
   }, [meshData]);
 
-  useEffect(() => { invalidate(); }, [gridHelper, invalidate]);
+  useEffect(() => {
+    invalidate();
+
+    return () => {
+      if (!gridHelper) return;
+      gridHelper.geometry.dispose();
+      if (Array.isArray(gridHelper.material)) {
+        gridHelper.material.forEach((m) => m.dispose());
+      } else {
+        gridHelper.material.dispose();
+      }
+    };
+  }, [gridHelper, invalidate]);
 
   if (!gridHelper) return null;
   return <primitive object={gridHelper} />;

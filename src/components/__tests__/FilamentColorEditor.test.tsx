@@ -59,4 +59,31 @@ describe('FilamentColorEditor', () => {
     // After reset, filament 1 should still exist
     expect(screen.getByLabelText('Filament 1 color')).toBeInTheDocument();
   });
+
+  it('add stops at 32 slots (max boundary)', async () => {
+    const user = userEvent.setup();
+    renderWithContext(<FilamentColorEditor />);
+    // Default: 11 colors. Click add 21 times to reach 32.
+    const addBtn = screen.getByLabelText('Add filament color');
+    for (let i = 0; i < 21; i++) {
+      await user.click(addBtn);
+    }
+    expect(screen.getByLabelText('Filament 31 color')).toBeInTheDocument();
+    // Add button should be gone at max
+    expect(screen.queryByLabelText('Add filament color')).not.toBeInTheDocument();
+  });
+
+  it('remove stops at 2 slots (min boundary)', async () => {
+    const user = userEvent.setup();
+    renderWithContext(<FilamentColorEditor />);
+    // Default: 11 colors. Remove 9 times to reach 2.
+    for (let i = 0; i < 9; i++) {
+      const removeBtn = screen.getByLabelText('Remove last filament');
+      await user.click(removeBtn);
+    }
+    expect(screen.getByLabelText('Filament 0 color')).toBeInTheDocument();
+    expect(screen.getByLabelText('Filament 1 color')).toBeInTheDocument();
+    // Remove button should be gone at min
+    expect(screen.queryByLabelText('Remove last filament')).not.toBeInTheDocument();
+  });
 });
