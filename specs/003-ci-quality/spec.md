@@ -52,7 +52,7 @@ Add a comprehensive CI pipeline that gates every PR with tests, type checking, l
 
 ## Design Constraints
 
-- **Node 22**: Use Node 22 consistently across CI workflows, matching the version used in `deploy.yml`.
+- **Node 24**: Use Node 24 (LTS) consistently across CI workflows, matching the local development environment and `deploy.yml`.
 - **npm**: Project uses npm (not pnpm/yarn) — `npm ci` for reproducible installs.
 - **Playwright single project**: Only Desktop Chrome is configured; CI should match.
 - **No secrets required**: All workflows must function without repository secrets (public repo, open-source tooling only).

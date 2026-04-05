@@ -25,7 +25,7 @@ Add a two-job CI workflow (`quality`, `e2e`) to gate all PRs with type checking,
    - **Job `quality`**:
      - `runs-on: ubuntu-latest`
      - `actions/checkout@v4`
-     - `actions/setup-node@v4` with `node-version: 22` and `cache: npm`
+     - `actions/setup-node@v4` with `node-version: 24` and `cache: npm`
      - `npm ci`
      - `npx tsc -b` (type check)
      - `npx eslint .` (lint)
@@ -33,7 +33,7 @@ Add a two-job CI workflow (`quality`, `e2e`) to gate all PRs with type checking,
    - **Job `e2e`**:
      - `needs: quality`
      - `runs-on: ubuntu-latest`
-     - Checkout, setup Node 22, `npm ci`
+     - Checkout, setup Node 24, `npm ci`
      - `npx playwright install --with-deps chromium`
      - `npx playwright test`
      - Upload `playwright-report/` artifact on failure (`if: ${{ failure() }}`)
