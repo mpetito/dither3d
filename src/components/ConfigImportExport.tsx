@@ -75,7 +75,7 @@ export function ConfigImportButton() {
   };
 
   return (
-    <>
+    <div className="flex flex-col">
       <button
         onClick={handleImport}
         className="px-2 py-0.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -92,6 +92,6 @@ export function ConfigImportButton() {
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
-    </>
+    </div>
   );
 }

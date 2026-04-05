@@ -22,10 +22,11 @@ const MINIMAL_MODEL = `<?xml version="1.0" encoding="UTF-8"?>
 </model>`;
 
 function make3mfBuffer(model: string, extras?: Record<string, Uint8Array>): ArrayBuffer {
-  return zipSync({
+  const bytes = zipSync({
     '3D/3dmodel.model': strToU8(model),
     ...extras,
-  }).buffer as ArrayBuffer;
+  });
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
 describe('write3mf metadata', () => {
@@ -95,7 +96,7 @@ describe('read3mf metadata', () => {
       'Metadata/Slic3r_PE_model.config': strToU8(configXml),
     });
     const data = read3mf(buf);
-    expect(data.filamentColors).toEqual(['#FF0000', '#00FF00']);
+    expect(data.filamentColors).toEqual(['', '#FF0000', '#00FF00']);
   });
 
   it('reads layer height from slicer config', () => {
@@ -152,7 +153,8 @@ describe('metadata round-trip', () => {
       filamentColors: colors,
     });
     const data = read3mf(bytes.buffer as ArrayBuffer);
-    expect(data.filamentColors).toEqual(colors);
+    // Index 0 is skipped during write (unassigned); colors[1] and colors[2] round-trip
+    expect(data.filamentColors).toEqual(['', '#E74C3C', '#3498DB']);
   });
 
   it('write then read preserves layer height', () => {

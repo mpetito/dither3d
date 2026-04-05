@@ -78,10 +78,9 @@ function MeshGeometry() {
 
   const geometry = useMemo(() => {
     if (!meshData) return null;
-    const { vertices, faces, faceColors, defaultFilament, faceCount } = meshData;
+    const { vertices, faces, faceCount } = meshData;
 
     const posArr = new Float32Array(faceCount * 9);
-    const colArr = new Float32Array(faceCount * 9);
 
     for (let f = 0; f < faceCount; f++) {
       const i0 = faces[f * 3];
@@ -99,28 +98,34 @@ function MeshGeometry() {
       posArr[f * 9 + 6] = vertices[i2 * 3];
       posArr[f * 9 + 7] = vertices[i2 * 3 + 1];
       posArr[f * 9 + 8] = vertices[i2 * 3 + 2];
-
-      const filament = faceColors.get(f) ?? defaultFilament;
-      const hex = filamentColors[filament] ?? filamentColors[0];
-      const [r, g, b] = hexToRgb(hex);
-
-      colArr[f * 9] = r;
-      colArr[f * 9 + 1] = g;
-      colArr[f * 9 + 2] = b;
-      colArr[f * 9 + 3] = r;
-      colArr[f * 9 + 4] = g;
-      colArr[f * 9 + 5] = b;
-      colArr[f * 9 + 6] = r;
-      colArr[f * 9 + 7] = g;
-      colArr[f * 9 + 8] = b;
     }
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
-    geo.setAttribute("color", new THREE.BufferAttribute(colArr, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(faceCount * 9), 3));
     geo.computeVertexNormals();
     return geo;
-  }, [meshData, filamentColors]);
+  }, [meshData]);
+
+  // Update vertex colors separately — avoids full geometry rebuild on color changes
+  useEffect(() => {
+    if (!geometry || !meshData) return;
+
+    const { faceColors, defaultFilament, faceCount } = meshData;
+    const colorAttr = geometry.getAttribute("color") as THREE.BufferAttribute;
+
+    for (let f = 0; f < faceCount; f++) {
+      const filament = faceColors.get(f) ?? defaultFilament;
+      const hex = filamentColors[filament] ?? filamentColors[0];
+      const [r, g, b] = hexToRgb(hex);
+      const base = f * 3;
+      colorAttr.setXYZ(base, r, g, b);
+      colorAttr.setXYZ(base + 1, r, g, b);
+      colorAttr.setXYZ(base + 2, r, g, b);
+    }
+
+    colorAttr.needsUpdate = true;
+  }, [geometry, meshData, filamentColors]);
 
   const shaderMaterial = useMemo(() => {
     if (

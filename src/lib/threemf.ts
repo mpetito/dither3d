@@ -50,9 +50,9 @@ function configXml(options: ConfigXmlOptions): string {
     xml += `  </plate>\n`;
   }
 
-  if (filamentColors && filamentColors.length > 0) {
-    for (let i = 0; i < filamentColors.length; i++) {
-      xml += `  <filament id="${i + 1}">\n`;
+  if (filamentColors && filamentColors.length > 1) {
+    for (let i = 1; i < filamentColors.length; i++) {
+      xml += `  <filament id="${i}">\n`;
       xml += `    <metadata key="display_color" value="${filamentColors[i]}"/>\n`;
       xml += `  </filament>\n`;
     }
@@ -260,8 +260,8 @@ function parseSlicerMetadata(entries: Record<string, Uint8Array>): {
             if (metaEls[j].getAttribute('key') === 'display_color') {
               const color = metaEls[j].getAttribute('value');
               if (color && id > 0) {
-                while (colors.length < id) colors.push('');
-                colors[id - 1] = color;
+                while (colors.length <= id) colors.push('');
+                colors[id] = color;
               }
             }
           }
