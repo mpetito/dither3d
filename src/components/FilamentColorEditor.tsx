@@ -22,13 +22,10 @@ export function FilamentColorEditor() {
     dispatch({ type: 'SET_FILAMENT_COLORS', colors: [...filamentColors, '#808080'] });
   }, [filamentColors, dispatch]);
 
-  const removeColor = useCallback(
-    (index: number) => {
-      if (filamentColors.length <= 2) return;
-      dispatch({ type: 'SET_FILAMENT_COLORS', colors: filamentColors.filter((_, i) => i !== index) });
-    },
-    [filamentColors, dispatch],
-  );
+  const removeColor = useCallback(() => {
+    if (filamentColors.length <= 2) return;
+    dispatch({ type: 'SET_FILAMENT_COLORS', colors: filamentColors.slice(0, -1) });
+  }, [filamentColors, dispatch]);
 
   const resetColor = useCallback(
     (index: number) => {
@@ -62,12 +59,12 @@ export function FilamentColorEditor() {
                 />
               </span>
             </label>
-            {filamentColors.length > 2 && (
+            {i > 0 && i === filamentColors.length - 1 && filamentColors.length > 2 && (
               <button
-                onClick={() => removeColor(i)}
+                onClick={() => removeColor()}
                 className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-[10px] leading-none flex items-center justify-center hover:bg-red-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Remove filament"
-                aria-label={`Remove filament ${i}`}
+                title="Remove last filament"
+                aria-label="Remove last filament"
               >
                 ×
               </button>

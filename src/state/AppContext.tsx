@@ -77,7 +77,7 @@ export { initialState };
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case "UPLOAD_START":
-      return { ...state, status: "loading", error: null };
+      return { ...state, status: "loading", error: null, previewMode: 'input' as const };
 
     case "UPLOAD_SUCCESS":
       return {

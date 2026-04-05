@@ -133,7 +133,12 @@ function MeshGeometry() {
 
     colorAttr.needsUpdate = true;
     invalidate();
-  }, [geometry, meshData, filamentColors, previewMode, invalidate]);
+  }, [geometry, meshData, filamentColors, invalidate]);
+
+  // Invalidate on preview mode switch without re-running O(faceCount) color fill
+  useEffect(() => {
+    invalidate();
+  }, [previewMode, invalidate]);
 
   const shaderMaterial = useMemo(() => {
     if (
@@ -193,7 +198,7 @@ function MeshGeometry() {
   );
 }
 
-/** Renders a 10mm-grid build plate at Z=0 sized to the model bounding box. */
+/** Renders a 10mm-grid build plate sized to the model bounding box, positioned just below the model's minimum Z. */
 function BuildPlateGrid() {
   const { meshData } = useAppState();
   const { invalidate } = useThree();
@@ -211,8 +216,9 @@ function BuildPlateGrid() {
       if (z < zMin) zMin = z;
     }
     const span = Math.max(xMax - xMin, yMax - yMin, 100) * 1.5;
-    const divisions = Math.round(span / 10);
-    const grid = new THREE.GridHelper(span, divisions, 0x888888, 0x444444);
+    const divisions = Math.max(1, Math.ceil(span / 10));
+    const size = divisions * 10;
+    const grid = new THREE.GridHelper(size, divisions, 0x888888, 0x444444);
     // GridHelper is XZ plane — rotate to XY to align with model's Z-up coordinate space
     grid.rotation.x = Math.PI / 2;
     grid.position.set((xMin + xMax) / 2, (yMin + yMax) / 2, zMin - 0.01);

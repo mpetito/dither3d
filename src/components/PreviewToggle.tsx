@@ -13,6 +13,7 @@ export function PreviewToggle() {
       <button
         type="button"
         onClick={() => setMode('input')}
+        aria-pressed={previewMode === 'input'}
         className={`px-3 py-1 text-xs font-medium rounded-l-md border ${
           previewMode === 'input'
             ? 'bg-indigo-600 text-white border-indigo-600'
@@ -24,6 +25,7 @@ export function PreviewToggle() {
       <button
         type="button"
         onClick={() => setMode('output')}
+        aria-pressed={previewMode === 'output'}
         disabled={!layerColorData}
         className={`px-3 py-1 text-xs font-medium rounded-r-md border-t border-b border-r ${
           previewMode === 'output'
