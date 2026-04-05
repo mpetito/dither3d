@@ -6,6 +6,7 @@ export function useProcessing() {
     const { rawFileData, config, meshData, status } = useAppState();
     const dispatch = useAppDispatch();
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const abortRef = useRef<AbortController>();
 
     useEffect(() => {
         // Don't process if no mesh loaded or currently loading
@@ -17,14 +18,23 @@ export function useProcessing() {
 
         // Debounce 300ms then process
         debounceRef.current = setTimeout(async () => {
+            // Abort any in-flight run (terminates workers, skips remaining steps)
+            abortRef.current?.abort();
+            const controller = new AbortController();
+            abortRef.current = controller;
+
             dispatch({ type: 'PROCESS_START' });
 
             try {
-                const [result, outputBytes, layerColorData] = await processAsync(rawFileData, config);
+                const [result, outputBytes, layerColorData] = await processAsync(
+                    rawFileData, config, { signal: controller.signal },
+                );
                 if (outputBytes) {
                     dispatch({ type: 'PROCESS_SUCCESS', result, outputBytes, layerColorData });
                 }
             } catch (e) {
+                // Silently ignore aborted runs
+                if (controller.signal.aborted) return;
                 dispatch({ type: 'PROCESS_ERROR', error: (e as Error).message });
             }
         }, 300);

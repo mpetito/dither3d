@@ -143,6 +143,7 @@ export interface ProcessOptions {
   flatten?: boolean;
   dryRun?: boolean;
   progressCallback?: ProgressCallback;
+  signal?: AbortSignal;
 }
 
 /**
@@ -310,6 +311,7 @@ export async function processAsync(
   const flatten = options?.flatten ?? false;
   const dryRun = options?.dryRun ?? false;
   const progressCallback = options?.progressCallback;
+  const signal = options?.signal;
   const warnings: string[] = [];
 
   // Step 1: Load 3MF
@@ -391,6 +393,7 @@ export async function processAsync(
   );
 
   // Step 6: Bisection encoding for boundary faces (parallel)
+  signal?.throwIfAborted();
   let boundaryFaceCount = 0;
   if (config.boundarySplit && config.boundaryStrategy === 'bisection') {
     const boundaryProgress = progressCallback
@@ -405,6 +408,7 @@ export async function processAsync(
         maxDepth: config.maxSplitDepth,
         progressCallback: boundaryProgress,
         layerFilamentMap,
+        signal,
       },
     );
 
@@ -417,6 +421,7 @@ export async function processAsync(
   const boundaryFacePct = nFaces > 0 ? (boundaryFaceCount / nFaces) * 100.0 : 0.0;
 
   // Step 7: Write output
+  signal?.throwIfAborted();
   let outputBytes: Uint8Array | undefined;
   if (!dryRun) {
     outputBytes = write3mf(

@@ -1,6 +1,6 @@
 /** JSON palette configuration loading and validation. */
 
-import { MAX_FILAMENTS } from './encoding';
+import { MAX_BISECTION_DEPTH, MAX_FILAMENTS } from './encoding';
 
 export class ConfigError extends Error {
     constructor(message: string) {
@@ -133,8 +133,9 @@ export function validateConfig(config: FullSpectrumConfig): string[] {
     if (config.maxSplitDepth < 0) {
         throw new ConfigError('max_split_depth must be non-negative');
     }
-    if (config.maxSplitDepth > 20) {
-        warnings.push(`max_split_depth ${config.maxSplitDepth} is unusually high (>20)`);
+    if (config.maxSplitDepth > MAX_BISECTION_DEPTH) {
+        warnings.push(`max_split_depth ${config.maxSplitDepth} exceeds MAX_BISECTION_DEPTH (${MAX_BISECTION_DEPTH}); clamping`);
+        config.maxSplitDepth = MAX_BISECTION_DEPTH;
     }
 
     if (config.layerHeightMm < 0.04 || config.layerHeightMm > 0.2) {

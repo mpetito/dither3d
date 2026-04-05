@@ -8,6 +8,7 @@ export interface PoolOptions {
     maxDepth?: number;
     progressCallback?: (done: number, total: number) => void;
     layerFilamentMap?: Map<number, number>;
+    signal?: AbortSignal;
 }
 
 /**
@@ -116,20 +117,40 @@ export async function encodeBoundaryFacesParallel(
 
     const merged = new Map<number, string>();
 
+    const signal = options?.signal;
+    const workers: Worker[] = [];
+    let aborted = false;
+
+    // If the caller aborts, terminate all live workers immediately
+    const onAbort = signal ? () => {
+        aborted = true;
+        for (const w of workers) {
+            w.terminate();
+        }
+    } : undefined;
+    if (signal && onAbort) {
+        signal.addEventListener('abort', onAbort, { once: true });
+    }
+
     const promises = chunks.map((chunk) => {
         return new Promise<void>((resolve, reject) => {
+            if (aborted) { resolve(); return; }
+
             const worker = new Worker(
                 new URL('./workers/subdivision.worker.ts', import.meta.url),
                 { type: 'module' },
             );
+            workers.push(worker);
 
             worker.onmessage = (e: MessageEvent<{ results: [number, string][] }>) => {
-                for (const [faceIdx, hexStr] of e.data.results) {
-                    merged.set(faceIdx, hexStr);
-                }
-                completedFaces += chunk.length;
-                if (progressCallback) {
-                    progressCallback(completedFaces, totalBoundary);
+                if (!aborted) {
+                    for (const [faceIdx, hexStr] of e.data.results) {
+                        merged.set(faceIdx, hexStr);
+                    }
+                    completedFaces += chunk.length;
+                    if (progressCallback) {
+                        progressCallback(completedFaces, totalBoundary);
+                    }
                 }
                 worker.terminate();
                 resolve();
@@ -137,6 +158,7 @@ export async function encodeBoundaryFacesParallel(
 
             worker.onerror = (err) => {
                 worker.terminate();
+                if (aborted) { resolve(); return; }
                 reject(new Error(`Subdivision worker error: ${err.message}`));
             };
 
@@ -155,5 +177,12 @@ export async function encodeBoundaryFacesParallel(
     });
 
     await Promise.all(promises);
+
+    // Clean up abort listener if we finished normally
+    if (signal && onAbort) {
+        signal.removeEventListener('abort', onAbort);
+    }
+
+    signal?.throwIfAborted();
     return merged;
 }

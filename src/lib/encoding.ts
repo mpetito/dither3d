@@ -2,6 +2,12 @@
 
 export const MAX_FILAMENTS = 10;
 
+/**
+ * Maximum bisection tree depth for both encoding and decoding.
+ * Depth 20 allows trees with up to 3^20 ≈ 3.5 billion leaves.
+ */
+export const MAX_BISECTION_DEPTH = 20;
+
 export const FILAMENT_HEX_TABLE: Record<number, string> = {
     1: '4', 2: '8', 3: '0C', 4: '1C', 5: '2C',
     6: '3C', 7: '4C', 8: '5C', 9: '6C', 10: '7C',
@@ -105,13 +111,9 @@ export function decodeBisectionTree(hexStr: string): BisectionNode {
     }
     const chars = hexStr.toUpperCase().split('');
     let pos = chars.length - 1;
-    // Max recursion depth (actual tree depth), not total node count.
-    // Depth 20 allows trees with up to 3^20 ≈ 3.5 billion leaves.
-    const maxRecursionDepth = 20;
-
     function read(depth: number): BisectionNode {
-        if (depth > maxRecursionDepth) {
-            throw new Error(`Tree too deep (>${maxRecursionDepth}); possibly malformed input`);
+        if (depth > MAX_BISECTION_DEPTH) {
+            throw new Error(`Tree too deep (>${MAX_BISECTION_DEPTH}); possibly malformed input`);
         }
         if (pos < 0) {
             throw new Error('Unexpected end of hex string while decoding');

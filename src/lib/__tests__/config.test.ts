@@ -136,10 +136,11 @@ describe('validateConfig', () => {
         expect(() => validateConfig(cfg)).toThrow('non-negative');
     });
 
-    it('warns when max_split_depth > 20', () => {
+    it('clamps max_split_depth exceeding MAX_BISECTION_DEPTH', () => {
         const cfg = testConfig({ maxSplitDepth: 25 });
         const warnings = validateConfig(cfg);
-        expect(warnings.some((w) => w.includes('unusually high'))).toBe(true);
+        expect(warnings.some((w) => w.includes('clamping'))).toBe(true);
+        expect(cfg.maxSplitDepth).toBe(20);
     });
 
     it('throws when input_filament out of [1, 10]', () => {

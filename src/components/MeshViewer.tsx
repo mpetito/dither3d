@@ -40,7 +40,8 @@ const LAYER_VERTEX_SHADER = /* glsl */ `
 
   void main() {
     vModelZ = position.z;
-    vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+    mat3 worldNormalMatrix = transpose(inverse(mat3(modelMatrix)));
+    vWorldNormal = normalize(worldNormalMatrix * normal);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
@@ -145,7 +146,7 @@ function MeshGeometry() {
     });
   }, [layerColorData]);
 
-  // Dispose previous shader material + texture when replaced
+  // Dispose previous shader material + texture when replaced or on unmount
   const prevMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   useEffect(() => {
     const prev = prevMaterialRef.current;
@@ -155,6 +156,17 @@ function MeshGeometry() {
     }
     prevMaterialRef.current = shaderMaterial;
   }, [shaderMaterial]);
+
+  useEffect(() => {
+    return () => {
+      const current = prevMaterialRef.current;
+      if (current) {
+        current.uniforms.uLayerColorTex.value.dispose();
+        current.dispose();
+        prevMaterialRef.current = null;
+      }
+    };
+  }, []);
 
   if (!geometry) return null;
 
