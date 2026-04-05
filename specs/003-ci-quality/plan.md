@@ -1,6 +1,6 @@
 # Plan: CI Workflow, Code Quality & Dependabot
 
-**Spec**: [specs/003-ci-quality/spec.md](specs/003-ci-quality/spec.md) | **Date**: 2026-04-05
+**Spec**: [spec.md](./spec.md) | **Date**: 2026-04-05
 
 ## Summary
 
@@ -25,7 +25,7 @@ Add a two-job CI workflow (`quality`, `e2e`) to gate all PRs with type checking,
    - **Job `quality`**:
      - `runs-on: ubuntu-latest`
      - `actions/checkout@v4`
-     - `actions/setup-node@v4` with `node-version: 24` and `cache: npm`
+     - `actions/setup-node@v4` with `node-version-file: .nvmrc` and `cache: npm`
      - `npm ci`
      - `npx tsc -b` (type check)
      - `npx eslint .` (lint)
@@ -33,7 +33,7 @@ Add a two-job CI workflow (`quality`, `e2e`) to gate all PRs with type checking,
    - **Job `e2e`**:
      - `needs: quality`
      - `runs-on: ubuntu-latest`
-     - Checkout, setup Node 24, `npm ci`
+     - Checkout, setup Node (via `.nvmrc`), `npm ci`
      - `npx playwright install --with-deps chromium`
      - `npx playwright test`
      - Upload `playwright-report/` artifact on failure (`if: ${{ failure() }}`)
@@ -73,15 +73,19 @@ Add a two-job CI workflow (`quality`, `e2e`) to gate all PRs with type checking,
 
 ## File Changes
 
-| File                           | Action | Purpose                                                   |
-| ------------------------------ | ------ | --------------------------------------------------------- |
-| `.github/workflows/ci.yml`     | Create | New CI workflow with `quality` and `e2e` jobs             |
-| `.github/dependabot.yml`       | Create | Dependabot config for npm + GitHub Actions weekly updates |
-| `.github/workflows/deploy.yml` | Modify | Remove redundant `npm test` step                          |
+| File                           | Action | Purpose                                                                       |
+| ------------------------------ | ------ | ----------------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`     | Create | New CI workflow with `quality` and `e2e` jobs                                 |
+| `.github/dependabot.yml`       | Create | Dependabot config for npm + GitHub Actions weekly updates                     |
+| `.github/workflows/deploy.yml` | Modify | Remove redundant `npm test` step, switch to `node-version-file`               |
+| `.nvmrc`                       | Create | Pin Node.js major version for local dev and CI                                |
+| `.gitignore`                   | Modify | Add `coverage/` to ignored paths                                              |
+| `package.json`                 | Modify | Add `@vitest/coverage-v8` dev dependency                                      |
+| `package-lock.json`            | Modify | Reflect dependency and lockfile format changes                                |
 
 ## Testing Strategy
 
-- [ ] Push CI workflow to a feature branch and open a PR to validate all three jobs run
+- [ ] Push CI workflow to a feature branch and open a PR to validate both jobs run
 - [ ] Intentionally introduce a type error to verify `quality` job fails
 - [ ] Intentionally introduce an ESLint violation to verify `quality` job fails
 - [ ] Verify CodeQL SARIF upload in Security tab via the default CodeQL workflow

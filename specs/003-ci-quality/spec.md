@@ -21,11 +21,11 @@ Add a comprehensive CI pipeline that gates every PR with tests, type checking, l
 - CodeQL security scanning for JavaScript/TypeScript
 - Playwright e2e tests in CI
 - Dependabot configuration for npm and GitHub Actions ecosystems
-- Update `deploy.yml` to depend on CI passing (avoid redundant test run)
+- Update `deploy.yml` to remove redundant test step (CI already covers testing)
 
 ### Out of Scope
 
-- Deployment changes beyond wiring CI as a prerequisite
+- Deployment changes beyond removing the redundant test step
 - Branch protection rule configuration (GitHub UI / Terraform)
 - Third-party code quality services (SonarCloud, Codecov)
 - Performance benchmarking or bundle-size tracking
@@ -40,7 +40,7 @@ Add a comprehensive CI pipeline that gates every PR with tests, type checking, l
 - **FR-3**: CodeQL security scanning for JavaScript/TypeScript is handled by the repository's default CodeQL workflow (auto-configured by GitHub), running on PRs and weekly schedule.
 - **FR-4**: The CI workflow includes an `e2e` job that installs Playwright browsers and runs `playwright test` with HTML report upload on failure.
 - **FR-5**: A `dependabot.yml` configures weekly updates for the `npm` ecosystem (root `/`) and `github-actions` ecosystem (root `/`).
-- **FR-6**: The `deploy.yml` workflow is updated to depend on the CI workflow succeeding (or at minimum removes the redundant `npm test` step since CI already covers it).
+- **FR-6**: The `deploy.yml` workflow removes the redundant `npm test` step since CI already covers testing. Deploy gating via `workflow_run` or branch protection is out of scope.
 
 ### Non-Functional
 
