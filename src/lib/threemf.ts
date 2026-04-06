@@ -446,9 +446,9 @@ export function read3mf(data: ArrayBuffer, flatten = false): ThreeMFData {
   const slicerMeta = parseSlicerMetadata(entries);
   let dither3dConfig: Record<string, unknown> | undefined;
 
-  // Check for dither3d config JSON (also reads legacy full-spectrum.config.json)
+  // Check for dither3d config JSON
   for (const name of Object.keys(entries)) {
-    if (name.toLowerCase() === 'metadata/dither3d.config.json' || name.toLowerCase() === 'metadata/full-spectrum.config.json') {
+    if (name.toLowerCase() === 'metadata/dither3d.config.json') {
       try {
         dither3dConfig = JSON.parse(decodeText(entries[name])) as Record<string, unknown>;
       } catch {
