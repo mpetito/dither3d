@@ -1,16 +1,19 @@
 # Dither3D
 
-**Turn any 3D print into a blended, multi-color object — no specialized slicer required.**
+**Z-axis color dithering for multi-material FDM prints.**
 
-Modern FDM printers with multi-material setups can only print one filament per layer.
-Dither3D works around this by rapidly alternating filament colors across layers — the
-same way an inkjet printer blends colors by interspersing dots. Load your 3MF file,
-assign a color palette to each filament region, and Dither3D produces a new 3MF with
-the layer-by-layer color pattern already baked in, ready to slice with OrcaSlicer,
-BambuStudio, PrusaSlicer, or any other slicer that supports multi-material 3MF files.
+Multi-material FDM printers print one filament per layer. Dither3D exploits this
+by alternating which filament is assigned to each layer — at fine layer heights
+(≤ 0.12 mm) the eye blends adjacent colors together, the same way halftone dots
+merge into continuous tones in print media.
 
-No plugins. No modified slicer. Works entirely in your browser — nothing is uploaded
-to a server.
+Load a painted 3MF, map each painted region to a cyclic or gradient color palette,
+and Dither3D outputs a new 3MF with the dithered pattern baked in. Slice it with
+**OrcaSlicer**, **BambuStudio**, or **PrusaSlicer** — any slicer that supports
+painted multi-material 3MF objects.
+
+No slicer plugins. No forked slicer builds. Runs entirely in your browser —
+nothing is uploaded to a server.
 
 ---
 
@@ -33,16 +36,19 @@ to a server.
 
 ### The Core Technique
 
-FDM color dithering exploits the limited Z resolution of the human eye. At a 0.1 mm
-layer height, alternating red and blue layers from even a modest viewing distance
-blend perceptually into purple — just as a TV screen blends subpixels into solid
-colors. Dither3D automates the assignment of per-face filament indices that produce
-this effect.
+FDM color dithering works along the Z axis. Each layer still uses a single
+filament, but Dither3D controls *which* filament is assigned to each layer. At
+fine layer heights (≤ 0.12 mm), alternating red and blue layers blend
+perceptually into purple from normal viewing distances — the same principle
+behind halftone printing.
 
 This technique was pioneered by the community around
-[OrcaSlicer-FullSpectrum](https://github.com/ratdoux/OrcaSlicer-FullSpectrum), which
-demonstrated the approach via a modified slicer. Dither3D takes a different path —
-working directly on the 3MF mesh so you can use any unmodified slicer.
+[OrcaSlicer-FullSpectrum](https://github.com/ratdoux/OrcaSlicer-FullSpectrum),
+which demonstrated the approach inside a modified slicer coupled to specific
+gcode dialects and printer profiles. Dither3D takes a different path — it
+operates on the 3MF mesh directly, so the output works with any stock slicer
+that supports painted multi-material 3MF files (tested with OrcaSlicer,
+BambuStudio, and PrusaSlicer).
 
 ### Mesh Processing
 
