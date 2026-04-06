@@ -100,7 +100,7 @@ on output.
 
 | Layer      | Technology                            |
 | ---------- | ------------------------------------- |
-| Framework  | React 19 + TypeScript 5.9             |
+| Framework  | React 19 + TypeScript                 |
 | Build      | Vite 8                                |
 | 3D Preview | Three.js via React Three Fiber + Drei |
 | CSS        | Tailwind CSS v4                       |
