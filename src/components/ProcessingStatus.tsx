@@ -14,7 +14,7 @@ export function ProcessingStatus() {
   const showProgress = status === 'processing' && progress && progress.total > 0;
 
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex-1 min-w-0 flex items-center gap-2 text-sm">
       {showProgress ? (
         <>
           <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
