@@ -20,6 +20,7 @@ i18n
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'fr', 'es', 'de', 'zh'],
+    load: 'languageOnly',
     interpolation: {
       escapeValue: false,
     },

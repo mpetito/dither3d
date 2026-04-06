@@ -13,7 +13,7 @@ export function LanguageSelector() {
 
   return (
     <select
-      value={i18n.language}
+      value={i18n.resolvedLanguage}
       onChange={(e) => i18n.changeLanguage(e.target.value)}
       aria-label={t('common.languageSelector')}
       className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-1.5 py-0.5 text-xs text-gray-700 dark:text-gray-300"

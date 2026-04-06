@@ -1,8 +1,9 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import i18n from '../i18n';
 
 describe('i18n', () => {
-  afterEach(async () => {
+  beforeEach(async () => {
+    localStorage.removeItem('dither3d-locale');
     await i18n.changeLanguage('en');
   });
 
