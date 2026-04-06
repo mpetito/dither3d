@@ -105,7 +105,7 @@ on output.
 | 3D Preview | Three.js via React Three Fiber + Drei |
 | CSS        | Tailwind CSS v4                       |
 | ZIP / 3MF  | fflate                                |
-| Unit Tests | Vitest (185+ tests)                   |
+| Unit Tests | Vitest                                |
 | E2E Tests  | Playwright                            |
 
 The processing library (`src/lib/`) is pure TypeScript with no DOM dependencies,

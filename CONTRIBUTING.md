@@ -16,7 +16,7 @@ git clone https://github.com/mpetito/dither3d.git
 cd dither3d
 npm install
 npm run dev       # Dev server at http://localhost:5173
-npm test          # Run 185+ unit tests (Vitest)
+npm test          # Run unit tests (Vitest)
 npm run test:e2e  # Playwright end-to-end tests
 npm run lint      # ESLint
 ```
