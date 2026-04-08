@@ -4,6 +4,7 @@ import { useAppDispatch, useAppState } from '../state/AppContext';
 import { read3mf } from '../lib/threemf';
 import { loadConfigFromJson } from '../lib/config';
 import { FILAMENT_COLORS } from '../constants';
+import { SamplePicker } from './SamplePicker';
 
 export function FileUpload() {
   const { t } = useTranslation();
@@ -12,6 +13,14 @@ export function FileUpload() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [sampleOpen, setSampleOpen] = useState(false);
+
+  const handleSampleOpen = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSampleOpen(true);
+  }, []);
+
+  const handleSampleClose = useCallback(() => setSampleOpen(false), []);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -82,6 +91,7 @@ export function FileUpload() {
   const hasFile = !!fileName && !!meshData;
 
   return (
+    <>
     <div
       role="button"
       aria-label={t('fileUpload.ariaLabel')}
@@ -140,9 +150,20 @@ export function FileUpload() {
       ) : (
         <div className="text-center">
           <p className="text-sm font-medium" id="file-upload-hint">{t('fileUpload.dropHint')}</p>
-          <p className="text-xs text-gray-500">{t('fileUpload.browseHint')}</p>
+          <p className="text-xs text-gray-500">
+            {t('fileUpload.browseHint')}{' '}
+            <button
+              type="button"
+              onClick={handleSampleOpen}
+              className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            >
+              {t('fileUpload.trySample')}
+            </button>
+          </p>
         </div>
       )}
     </div>
+    <SamplePicker open={sampleOpen} onClose={handleSampleClose} />
+    </>
   );
 }

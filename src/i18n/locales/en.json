@@ -11,7 +11,8 @@
     "loading": "Loading…",
     "fileInfo": "{{count}} faces · click to replace",
     "dropHint": "Drop a .3mf file here",
-    "browseHint": "or click to browse"
+    "browseHint": "click to browse",
+    "trySample": "or try a sample"
   },
   "filamentList": {
     "heading": "Filaments",
@@ -86,6 +87,23 @@
     "label": "Pattern ({{count}} slots)",
     "removeTooltip": "Remove",
     "addEntry": "+"
+  },
+  "samples": {
+    "heading": "Try a Sample",
+    "loading": "Loading…",
+    "error": "Failed to load sample",
+    "benchyCyclic": {
+      "label": "Benchy – Cyclic",
+      "description": "3DBenchy with cyclic red/blue dithering"
+    },
+    "benchy2colorGradient": {
+      "label": "Benchy – Gradient",
+      "description": "2-color 3DBenchy with gradient palette"
+    },
+    "cylinderCyclic": {
+      "label": "Cylinder – Cyclic",
+      "description": "Simple cylinder with cyclic red/blue dithering"
+    }
   },
   "common": {
     "languageSelector": "Language"

@@ -11,7 +11,8 @@
     "loading": "Chargement…",
     "fileInfo": "{{count}} faces · cliquer pour remplacer",
     "dropHint": "Déposez un fichier .3mf ici",
-    "browseHint": "ou cliquez pour parcourir"
+    "browseHint": "cliquez pour parcourir",
+    "trySample": "ou essayer un exemple"
   },
   "filamentList": {
     "heading": "Filaments",
@@ -86,6 +87,23 @@
     "label": "Motif ({{count}} emplacements)",
     "removeTooltip": "Supprimer",
     "addEntry": "+"
+  },
+  "samples": {
+    "heading": "Essayer un exemple",
+    "loading": "Chargement…",
+    "error": "Échec du chargement de l'exemple",
+    "benchyCyclic": {
+      "label": "Benchy – Cyclique",
+      "description": "3DBenchy avec tramage cyclique rouge/bleu"
+    },
+    "benchy2colorGradient": {
+      "label": "Benchy – Dégradé",
+      "description": "3DBenchy 2 couleurs avec palette en dégradé"
+    },
+    "cylinderCyclic": {
+      "label": "Cylindre – Cyclique",
+      "description": "Cylindre simple avec tramage cyclique rouge/bleu"
+    }
   },
   "common": {
     "languageSelector": "Langue"
