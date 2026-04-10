@@ -11,7 +11,7 @@
     "loading": "加载中…",
     "fileInfo": "{{count}} 个面 · 点击替换",
     "dropHint": "将 .3mf 文件拖放到此处",
-    "browseHint": "或点击浏览"
+    "browseHintWithSample": "点击浏览或<1>试用示例</1>"
   },
   "filamentList": {
     "heading": "耗材",
@@ -87,7 +87,25 @@
     "removeTooltip": "移除",
     "addEntry": "+"
   },
+  "samples": {
+    "heading": "试用示例",
+    "loading": "加载中…",
+    "error": "加载示例失败",
+    "benchyCyclic": {
+      "label": "Benchy – 循环",
+      "description": "3DBenchy 红/蓝循环抖动"
+    },
+    "benchy2colorGradient": {
+      "label": "Benchy – 渐变",
+      "description": "双色 3DBenchy 渐变调色板"
+    },
+    "cylinderCyclic": {
+      "label": "圆柱 – 循环",
+      "description": "简单圆柱红/蓝循环抖动"
+    }
+  },
   "common": {
-    "languageSelector": "语言"
+    "languageSelector": "语言",
+    "close": "关闭"
   }
 }

@@ -1,0 +1,21 @@
+{
+  "filament_colors": [
+    "#808080",
+    "#E74C3C",
+    "#3498DB"
+  ],
+  "layer_height_mm": 0.08,
+  "target_format": "both",
+  "boundary_split": true,
+  "max_split_depth": 9,
+  "boundary_strategy": "bisection",
+  "color_mappings": [
+    {
+      "input_filament": 1,
+      "output_palette": {
+        "type": "cyclic",
+        "pattern": [1, 2]
+      }
+    }
+  ]
+}

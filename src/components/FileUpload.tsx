@@ -1,17 +1,25 @@
 import { useCallback, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { useAppDispatch, useAppState } from '../state/AppContext';
 import { read3mf } from '../lib/threemf';
 import { loadConfigFromJson } from '../lib/config';
 import { FILAMENT_COLORS } from '../constants';
+import { SamplePicker } from './SamplePicker';
 
 export function FileUpload() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const { status, meshData } = useAppState();
+  const { status, meshData, inputFilename } = useAppState();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [sampleOpen, setSampleOpen] = useState(false);
+
+  const handleSampleOpen = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSampleOpen(true);
+  }, []);
+
+  const handleSampleClose = useCallback(() => setSampleOpen(false), []);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -19,7 +27,6 @@ export function FileUpload() {
       try {
         const buf = await file.arrayBuffer();
         const data = read3mf(buf, true);
-        setFileName(file.name);
         dispatch({ type: 'UPLOAD_SUCCESS', meshData: data, rawFileData: buf });
         const stem = file.name.replace(/\.3mf$/i, '');
         dispatch({ type: 'SET_INPUT_FILENAME', filename: stem });
@@ -79,9 +86,10 @@ export function FileUpload() {
 
   const isLoading = status === 'loading';
 
-  const hasFile = !!fileName && !!meshData;
+  const hasFile = !!inputFilename && !!meshData;
 
   return (
+    <>
     <div
       role="button"
       aria-label={t('fileUpload.ariaLabel')}
@@ -130,7 +138,7 @@ export function FileUpload() {
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
             <p className="text-sm font-medium truncate max-w-[14rem]">
-              {fileName}
+              {inputFilename}
             </p>
             <p className="text-xs text-gray-500">
               {t('fileUpload.fileInfo', { count: meshData.faceCount })}
@@ -140,9 +148,19 @@ export function FileUpload() {
       ) : (
         <div className="text-center">
           <p className="text-sm font-medium" id="file-upload-hint">{t('fileUpload.dropHint')}</p>
-          <p className="text-xs text-gray-500">{t('fileUpload.browseHint')}</p>
+          <p className="text-xs text-gray-500">
+            <Trans i18nKey="fileUpload.browseHintWithSample">
+              click to browse or <button
+                type="button"
+                onClick={handleSampleOpen}
+                className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+              >try a sample</button>
+            </Trans>
+          </p>
         </div>
       )}
     </div>
+    <SamplePicker open={sampleOpen} onClose={handleSampleClose} />
+    </>
   );
 }

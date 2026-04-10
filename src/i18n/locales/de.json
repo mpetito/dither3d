@@ -11,7 +11,7 @@
     "loading": "Wird geladen…",
     "fileInfo": "{{count}} Flächen · klicken zum Ersetzen",
     "dropHint": "Eine .3mf-Datei hierher ziehen",
-    "browseHint": "oder klicken zum Durchsuchen"
+    "browseHintWithSample": "klicken zum Durchsuchen oder <1>ein Beispiel ausprobieren</1>"
   },
   "filamentList": {
     "heading": "Filamente",
@@ -87,7 +87,25 @@
     "removeTooltip": "Entfernen",
     "addEntry": "+"
   },
+  "samples": {
+    "heading": "Beispiel ausprobieren",
+    "loading": "Wird geladen…",
+    "error": "Beispiel konnte nicht geladen werden",
+    "benchyCyclic": {
+      "label": "Benchy – Zyklisch",
+      "description": "3DBenchy mit zyklischem Rot/Blau-Dithering"
+    },
+    "benchy2colorGradient": {
+      "label": "Benchy – Verlauf",
+      "description": "2-Farben-3DBenchy mit Verlaufspalette"
+    },
+    "cylinderCyclic": {
+      "label": "Zylinder – Zyklisch",
+      "description": "Einfacher Zylinder mit zyklischem Rot/Blau-Dithering"
+    }
+  },
   "common": {
-    "languageSelector": "Sprache"
+    "languageSelector": "Sprache",
+    "close": "Schließen"
   }
 }
