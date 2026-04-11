@@ -1,6 +1,6 @@
 /** Web Worker for parallel bisection encoding of boundary faces. */
 
-import { makeSubdivider, faceToHex } from '../subdivision';
+import { makeSubdivider, faceToHex, createFaceToHexBuffers } from '../subdivision';
 
 interface WorkerInput {
   vertices: Float64Array;
@@ -8,7 +8,8 @@ interface WorkerInput {
   boundaryIndices: number[];
   layerHeight: number;
   globalZMin: number;
-  filamentByLayer: [number, number][];
+  clusterLayerMaps: Uint8Array[];
+  faceClusterIndex: Uint16Array;
   defaultFilament: number;
   maxDepth: number;
   epsilon: number;
@@ -25,26 +26,26 @@ self.onmessage = (e: MessageEvent<WorkerInput>) => {
     boundaryIndices,
     layerHeight,
     globalZMin,
-    filamentByLayer,
+    clusterLayerMaps,
+    faceClusterIndex,
     defaultFilament,
     maxDepth,
     epsilon,
   } = e.data;
 
-  const layerMap = new Map<number, number>(filamentByLayer);
-
   const subdivideFn = makeSubdivider(
     layerHeight,
     globalZMin,
-    layerMap,
+    clusterLayerMaps,
+    faceClusterIndex,
     defaultFilament,
-    maxDepth,
     epsilon,
   );
 
   const results: [number, string][] = [];
+  const buffers = createFaceToHexBuffers();
   for (const faceIdx of boundaryIndices) {
-    results.push([faceIdx, faceToHex(subdivideFn, vertices, faces, faceIdx, maxDepth)]);
+    results.push([faceIdx, faceToHex(subdivideFn, vertices, faces, faceIdx, maxDepth, buffers)]);
   }
 
   const output: WorkerOutput = { results };
