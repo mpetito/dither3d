@@ -309,7 +309,7 @@ describe('validateConfig', () => {
             }],
         });
         expect(() => validateConfig(cfg)).toThrow(ConfigError);
-        expect(() => validateConfig(cfg)).toThrow('maxCycleLength');
+        expect(() => validateConfig(cfg)).toThrow('max_cycle_length');
     });
 
     it('throws when transition has fewer than 2 stops', () => {

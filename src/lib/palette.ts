@@ -495,7 +495,7 @@ const transitionStrategy: PaletteStrategy<TransitionPalette> = {
       }
     }
     if (palette.maxCycleLength < 1) {
-      throw new PaletteError(`color_mappings[${mappingIndex}]: maxCycleLength must be >= 1`);
+      throw new PaletteError(`color_mappings[${mappingIndex}].max_cycle_length: must be >= 1`);
     }
     if (palette.transitionWidth.mode === 'percent') {
       if (palette.transitionWidth.value <= 0 || palette.transitionWidth.value > 1) {
@@ -542,7 +542,10 @@ const transitionStrategy: PaletteStrategy<TransitionPalette> = {
 
     let transitionWidthResult: TransitionWidth = { mode: 'auto' };
     const rawTW = raw['transition_width'];
-    if (rawTW && typeof rawTW === 'object' && !Array.isArray(rawTW)) {
+    if (rawTW !== undefined) {
+      if (rawTW === null || typeof rawTW !== 'object' || Array.isArray(rawTW)) {
+        throw new PaletteError('transition_width must be an object');
+      }
       const twObj = rawTW as Record<string, unknown>;
       const mode = twObj['mode'];
       if (mode === 'percent') {

@@ -271,6 +271,25 @@ describe('transitionStrategy.parse validation', () => {
     })).toThrow("requires a numeric 'value'");
   });
 
+  it('throws for non-object transition_width', () => {
+    const strategy = getPaletteStrategy('transition');
+    expect(() => strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+      transition_width: 'auto',
+    })).toThrow('transition_width must be an object');
+    expect(() => strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+      transition_width: null,
+    })).toThrow('transition_width must be an object');
+    expect(() => strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+      transition_width: [1, 2],
+    })).toThrow('transition_width must be an object');
+  });
+
   it('throws for unknown transition_width mode', () => {
     const strategy = getPaletteStrategy('transition');
     expect(() => strategy.parse({
