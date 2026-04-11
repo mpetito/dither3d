@@ -65,7 +65,7 @@ correct approach for output preview.
 ### Multi-Region Clusters
 
 Input faces are grouped into **clusters** by their painted filament index. Each
-cluster has its own palette mapping (cyclic or gradient), producing independent
+cluster has its own palette mapping (cyclic or bresenham), producing independent
 layer→filament assignments.
 
 **Current bug (spec 007):** `buildLayerFilamentMap()` conflates all clusters
@@ -81,7 +81,7 @@ texture (layers × clusters) with a per-vertex cluster index attribute.
 | Module                | Data granularity                    | Purpose                                                                                     |
 | --------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------- |
 | `mesh.ts`             | Per-face (centroid Z → layer index) | Geometry types, `computeCentroidsZ`, `computeGlobalFaceLayers`, `computeRegionLayers`       |
-| `palette.ts`          | Per-layer (layer index → filament)  | `applyCyclic`, `applyGradient`, `buildGradientLayerMap`                                     |
+| `palette.ts`          | Per-layer (layer index → filament)  | `applyCyclic`, `applyBresenham`, `buildBresenhamLayerMap`                                   |
 | `pipeline.ts`         | Per-face + per-layer                | Orchestrates read → cluster → palette → encode → write; builds `LayerColorData` for preview |
 | `subdivision.ts`      | Per-sub-triangle (recursive)        | `findBoundaryFaces`, `makeSubdivider` (bisection closure), `encodeBoundaryFaces`            |
 | `subdivision-pool.ts` | Same as subdivision.ts              | Parallel worker dispatch for `encodeBoundaryFacesParallel`                                  |
@@ -94,7 +94,7 @@ texture (layers × clusters) with a per-vertex cluster index attribute.
 ```
 MeshData          — vertices: Float64Array, faces: Uint32Array, faceCount
 Dither3DConfig    — layerHeightMm, colorMappings[], maxSplitDepth, targetFormat
-Palette           — CyclicPalette { pattern[] } | GradientPalette { stops[] }
+Palette           — CyclicPalette { pattern[] } | BresenhamPalette { stops[] }
 LayerColorData    — layerFilamentMap, zMin, layerHeight, totalLayers (feeds shader)
 PipelineResult    — faceCount, layerCount, filamentDistribution, warnings
 ```

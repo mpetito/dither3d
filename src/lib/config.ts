@@ -20,12 +20,24 @@ export interface GradientStop {
     filament: number;
 }
 
-export interface GradientPalette {
-    type: 'gradient';
+export interface BresenhamPalette {
+    type: 'bresenham';
     stops: readonly GradientStop[];
 }
 
-export type Palette = CyclicPalette | GradientPalette;
+export type TransitionWidth =
+  | { mode: 'auto' }
+  | { mode: 'percent'; value: number }
+  | { mode: 'mm'; value: number };
+
+export interface TransitionPalette {
+    type: 'transition';
+    stops: readonly GradientStop[];
+    transitionWidth: TransitionWidth;
+    maxCycleLength: number;
+}
+
+export type Palette = CyclicPalette | BresenhamPalette | TransitionPalette;
 
 export interface ColorMapping {
     inputFilament: number;

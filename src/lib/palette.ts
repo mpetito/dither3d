@@ -1,11 +1,11 @@
 /**
- * Cyclic and gradient dithering algorithm implementations.
+ * Cyclic and Bresenham dithering algorithm implementations.
  *
- * Gradient dithering uses sequential error diffusion to distribute
+ * Bresenham dithering uses sequential error diffusion to distribute
  * minority-color layers maximally apart, eliminating structural banding.
  */
 
-import type { Palette, CyclicPalette, GradientPalette, GradientStop } from './config';
+import type { Palette, CyclicPalette, BresenhamPalette, TransitionPalette, TransitionWidth, GradientStop } from './config';
 import { MAX_FILAMENTS } from './encoding';
 
 export class PaletteError extends Error {
@@ -15,13 +15,18 @@ export class PaletteError extends Error {
   }
 }
 
+/** Context bag passed from the pipeline to palette strategies. */
+export interface PaletteContext {
+  layerHeightMm: number;
+}
+
 /** Strategy for a single palette type. */
 export interface PaletteStrategy<T extends Palette = Palette> {
   readonly type: string;
   /** Apply palette to face layer indices for a single cluster. */
-  apply(layerIndices: Uint32Array, regionLayers: number, palette: T): Uint8Array;
+  apply(layerIndices: Uint32Array, regionLayers: number, palette: T, ctx: PaletteContext): Uint8Array;
   /** Build a layer→filament map for a single cluster (for boundary encoding). */
-  buildLayerMap(regionLayers: number, palette: T): Uint8Array;
+  buildLayerMap(regionLayers: number, palette: T, ctx: PaletteContext): Uint8Array;
   /** Validate palette-specific config; throw PaletteError on failure. */
   validate(palette: T, mappingIndex: number): void;
   /** Serialize palette to JSON-safe object. */
@@ -56,7 +61,7 @@ export function applyCyclic(
  * Processes layers sequentially so the error accumulator carries across
  * segment boundaries, eliminating phase-alignment artifacts.
  */
-export function buildGradientLayerMap(
+export function buildBresenhamLayerMap(
   totalLayers: number,
   stops: readonly [number, number][],
 ): Uint8Array {
@@ -118,21 +123,21 @@ export function buildGradientLayerMap(
 }
 
 /**
- * Apply a gradient palette across face layer indices.
+ * Apply a Bresenham palette across face layer indices.
  *
  * Uses sequential error diffusion to distribute color transitions
  * maximally apart, eliminating structural banding artifacts.
  */
-export function applyGradient(
+export function applyBresenham(
   layerIndices: Uint32Array,
   totalLayers: number,
   stops: readonly [number, number][],
 ): Uint8Array {
   if (stops.length < 2) {
-    throw new PaletteError('Gradient requires at least 2 stops');
+    throw new PaletteError('Bresenham palette requires at least 2 stops');
   }
 
-  const layerMap = buildGradientLayerMap(totalLayers, stops);
+  const layerMap = buildBresenhamLayerMap(totalLayers, stops);
 
   const n = layerIndices.length;
   const result = new Uint8Array(n);
@@ -147,10 +152,10 @@ export function applyGradient(
 
 const cyclicStrategy: PaletteStrategy<CyclicPalette> = {
   type: 'cyclic',
-  apply(layerIndices, _regionLayers, palette) {
+  apply(layerIndices, _regionLayers, palette, _ctx) {
     return applyCyclic(layerIndices, palette.pattern);
   },
-  buildLayerMap(regionLayers, palette) {
+  buildLayerMap(regionLayers, palette, _ctx) {
     const map = new Uint8Array(regionLayers);
     for (let i = 0; i < regionLayers; i++) {
       map[i] = palette.pattern[i % palette.pattern.length];
@@ -183,23 +188,23 @@ const cyclicStrategy: PaletteStrategy<CyclicPalette> = {
   },
 };
 
-const gradientStrategy: PaletteStrategy<GradientPalette> = {
-  type: 'gradient',
-  apply(layerIndices, regionLayers, palette) {
+const bresenhamStrategy: PaletteStrategy<BresenhamPalette> = {
+  type: 'bresenham',
+  apply(layerIndices, regionLayers, palette, _ctx) {
     const stops = palette.stops.map((s) => [s.t, s.filament] as [number, number]);
-    return applyGradient(layerIndices, regionLayers, stops);
+    return applyBresenham(layerIndices, regionLayers, stops);
   },
-  buildLayerMap(regionLayers, palette) {
+  buildLayerMap(regionLayers, palette, _ctx) {
     const stops = palette.stops.map((s) => [s.t, s.filament] as [number, number]);
-    return buildGradientLayerMap(regionLayers, stops);
+    return buildBresenhamLayerMap(regionLayers, stops);
   },
   validate(palette, mappingIndex) {
     if (palette.stops.length < 2) {
-      throw new PaletteError(`color_mappings[${mappingIndex}]: gradient requires at least 2 stops`);
+      throw new PaletteError(`color_mappings[${mappingIndex}]: bresenham requires at least 2 stops`);
     }
     for (let j = 1; j < palette.stops.length; j++) {
       if (palette.stops[j].t < palette.stops[j - 1].t) {
-        throw new PaletteError(`color_mappings[${mappingIndex}]: gradient stops not sorted by t`);
+        throw new PaletteError(`color_mappings[${mappingIndex}]: bresenham stops not sorted by t`);
       }
     }
     for (let j = 0; j < palette.stops.length; j++) {
@@ -217,28 +222,28 @@ const gradientStrategy: PaletteStrategy<GradientPalette> = {
     }
   },
   toJson(palette) {
-    return { type: 'gradient', stops: palette.stops.map((s) => [s.t, s.filament]) };
+    return { type: 'bresenham', stops: palette.stops.map((s) => [s.t, s.filament]) };
   },
   parse(raw) {
     const rawStops = raw['stops'];
     if (!Array.isArray(rawStops) || rawStops.length < 2) {
-      throw new PaletteError('Gradient palette requires at least 2 stops');
+      throw new PaletteError('Bresenham palette requires at least 2 stops');
     }
     const stops: GradientStop[] = [];
     for (let i = 0; i < rawStops.length; i++) {
       const s = rawStops[i];
       if (!Array.isArray(s) || s.length !== 2) {
-        throw new PaletteError(`Gradient stop ${i} must be in format [t, filament]`);
+        throw new PaletteError(`Bresenham stop ${i} must be in format [t, filament]`);
       }
       if (typeof s[0] !== 'number') {
-        throw new PaletteError(`Gradient stop ${i}: t must be a number, got ${typeof s[0]}`);
+        throw new PaletteError(`Bresenham stop ${i}: t must be a number, got ${typeof s[0]}`);
       }
       if (typeof s[1] !== 'number' || !Number.isInteger(s[1])) {
-        throw new PaletteError(`Gradient stop ${i}: filament must be an integer, got ${typeof s[1]}`);
+        throw new PaletteError(`Bresenham stop ${i}: filament must be an integer, got ${typeof s[1]}`);
       }
       stops.push({ t: s[0] as number, filament: s[1] as number });
     }
-    return { type: 'gradient', stops };
+    return { type: 'bresenham', stops };
   },
 };
 
@@ -261,4 +266,258 @@ export function getPaletteTypes(): string[] {
 
 // Register built-in palette strategies
 registerPalette(cyclicStrategy as PaletteStrategy);
-registerPalette(gradientStrategy as PaletteStrategy);
+registerPalette(bresenhamStrategy as PaletteStrategy);
+
+// --- Transition palette ---
+
+/**
+ * Build a layer→filament map using tapered cyclic alternation.
+ *
+ * For each segment between adjacent stops, if the filaments differ:
+ * - Compute a transition band of width W centered at the segment midpoint
+ * - Outside the band: solid fill of the nearer stop's filament
+ * - Inside the band: tapered alternation from edge to center
+ */
+export function buildTransitionLayerMap(
+  totalLayers: number,
+  stops: readonly [number, number][],
+  transitionWidth: TransitionWidth,
+  maxCycleLength: number,
+  ctx: PaletteContext,
+): Uint8Array {
+  const result = new Uint8Array(totalLayers);
+  if (totalLayers === 0) return result;
+  if (stops.length < 2) {
+    result.fill(stops.length === 1 ? stops[0][1] : 1);
+    return result;
+  }
+
+  const maxLayer = totalLayers - 1;
+
+  // Process each segment between consecutive stops
+  for (let segIdx = 0; segIdx < stops.length - 1; segIdx++) {
+    const fi = stops[segIdx][1];
+    const fi1 = stops[segIdx + 1][1];
+    const segStartLayer = Math.round(stops[segIdx][0] * maxLayer);
+    const segEndLayer = Math.round(stops[segIdx + 1][0] * maxLayer);
+    const segLayers = segEndLayer - segStartLayer;
+
+    if (fi === fi1 || segLayers <= 0) {
+      for (let l = segStartLayer; l <= Math.min(segEndLayer, maxLayer); l++) {
+        result[l] = fi;
+      }
+      continue;
+    }
+
+    // Compute band width W
+    let W: number;
+    if (transitionWidth.mode === 'auto') {
+      // Equal-region sizing: N stops → (2N-1) equal regions
+      // Each transition band = segLayers × (N-1)/(2N-1)
+      const N = stops.length;
+      W = Math.round(segLayers * (N - 1) / (2 * N - 1));
+    } else if (transitionWidth.mode === 'percent') {
+      W = Math.round(segLayers * transitionWidth.value);
+    } else {
+      W = Math.round(transitionWidth.value / ctx.layerHeightMm);
+    }
+    W = Math.max(0, Math.min(W, segLayers));
+
+    if (W <= 0) {
+      // No transition band — hard cut at midpoint
+      const mid = (segStartLayer + segEndLayer) / 2;
+      for (let l = segStartLayer; l <= Math.min(segEndLayer, maxLayer); l++) {
+        result[l] = l < mid ? fi : fi1;
+      }
+      continue;
+    }
+
+    // Band positioning: centered in segment
+    const bandCenter = Math.round((segStartLayer + segEndLayer) / 2);
+    const halfW = Math.floor(W / 2);
+    const bandStart = Math.max(segStartLayer, bandCenter - halfW);
+    const bandEnd = Math.min(segEndLayer, bandStart + W);
+
+    // Fill solid regions around the band
+    for (let l = segStartLayer; l < bandStart && l < totalLayers; l++) {
+      result[l] = fi;
+    }
+    for (let l = bandEnd; l <= Math.min(segEndLayer, maxLayer); l++) {
+      result[l] = fi1;
+    }
+
+    // Transition band: Bresenham-style error accumulation with max-run enforcement.
+    // The density of fi1 ramps from minRate to maxRate across the band.
+    // minRate/maxRate are chosen so that at constant density the natural
+    // Bresenham pattern already respects maxCycleLength (safety forcing
+    // is retained as a backstop for rounding edge cases).
+    const bandLength = bandEnd - bandStart;
+    if (bandLength <= 0) continue;
+
+    const minRate = 1 / (maxCycleLength + 1);
+    const maxRate = maxCycleLength / (maxCycleLength + 1);
+
+    let error = 0;
+    let runA = 0; // consecutive fi count
+    let runB = 0; // consecutive fi1 count
+
+    for (let i = 0; i < bandLength; i++) {
+      const layer = bandStart + i;
+      if (layer >= totalLayers) break;
+
+      // Target density of fi1: ramps from minRate to maxRate across the band
+      const t = bandLength > 1 ? i / (bandLength - 1) : 0.5;
+      const density = minRate + (maxRate - minRate) * t;
+      error += density;
+
+      const forceB = runA >= maxCycleLength;
+      const forceA = runB >= maxCycleLength;
+
+      let chooseB: boolean;
+      if (forceB) {
+        chooseB = true;
+      } else if (forceA) {
+        chooseB = false;
+      } else {
+        chooseB = error >= 0.5;
+      }
+
+      if (chooseB) {
+        result[layer] = fi1;
+        error -= 1.0;
+        runB++;
+        runA = 0;
+      } else {
+        result[layer] = fi;
+        runA++;
+        runB = 0;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Apply a transition palette across face layer indices.
+ */
+export function applyTransition(
+  layerIndices: Uint32Array,
+  regionLayers: number,
+  stops: readonly [number, number][],
+  transitionWidth: TransitionWidth,
+  maxCycleLength: number,
+  ctx: PaletteContext,
+): Uint8Array {
+  const layerMap = buildTransitionLayerMap(regionLayers, stops, transitionWidth, maxCycleLength, ctx);
+  const n = layerIndices.length;
+  const result = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const idx = Math.max(0, Math.min(layerIndices[i], layerMap.length - 1));
+    result[i] = layerMap[idx];
+  }
+  return result;
+}
+
+const transitionStrategy: PaletteStrategy<TransitionPalette> = {
+  type: 'transition',
+  apply(layerIndices, regionLayers, palette, ctx) {
+    const stops = palette.stops.map(s => [s.t, s.filament] as [number, number]);
+    return applyTransition(layerIndices, regionLayers, stops, palette.transitionWidth, palette.maxCycleLength, ctx);
+  },
+  buildLayerMap(regionLayers, palette, ctx) {
+    const stops = palette.stops.map(s => [s.t, s.filament] as [number, number]);
+    return buildTransitionLayerMap(regionLayers, stops, palette.transitionWidth, palette.maxCycleLength, ctx);
+  },
+  validate(palette, mappingIndex) {
+    if (palette.stops.length < 2) {
+      throw new PaletteError(`color_mappings[${mappingIndex}]: transition requires at least 2 stops`);
+    }
+    for (let j = 1; j < palette.stops.length; j++) {
+      if (palette.stops[j].t < palette.stops[j - 1].t) {
+        throw new PaletteError(`color_mappings[${mappingIndex}]: transition stops not sorted by t`);
+      }
+    }
+    for (let j = 0; j < palette.stops.length; j++) {
+      const stop = palette.stops[j];
+      if (stop.t < 0.0 || stop.t > 1.0) {
+        throw new PaletteError(
+          `color_mappings[${mappingIndex}].stops[${j}]: t=${stop.t} outside [0.0, 1.0]`,
+        );
+      }
+      if (stop.filament < 1 || stop.filament > MAX_FILAMENTS) {
+        throw new PaletteError(
+          `color_mappings[${mappingIndex}].stops[${j}]: filament ${stop.filament} outside range [1, ${MAX_FILAMENTS}]`,
+        );
+      }
+    }
+    if (palette.maxCycleLength < 1) {
+      throw new PaletteError(`color_mappings[${mappingIndex}]: maxCycleLength must be >= 1`);
+    }
+    if (palette.transitionWidth.mode === 'percent') {
+      if (palette.transitionWidth.value <= 0 || palette.transitionWidth.value > 1) {
+        throw new PaletteError(`color_mappings[${mappingIndex}]: percent transition width must be in (0, 1]`);
+      }
+    }
+    if (palette.transitionWidth.mode === 'mm') {
+      if (palette.transitionWidth.value <= 0) {
+        throw new PaletteError(`color_mappings[${mappingIndex}]: mm transition width must be > 0`);
+      }
+    }
+  },
+  toJson(palette) {
+    const tw: Record<string, unknown> = { mode: palette.transitionWidth.mode };
+    if ('value' in palette.transitionWidth) {
+      tw['value'] = palette.transitionWidth.value;
+    }
+    return {
+      type: 'transition',
+      stops: palette.stops.map(s => [s.t, s.filament]),
+      transition_width: tw,
+      max_cycle_length: palette.maxCycleLength,
+    };
+  },
+  parse(raw) {
+    const rawStops = raw['stops'];
+    if (!Array.isArray(rawStops) || rawStops.length < 2) {
+      throw new PaletteError('Transition palette requires at least 2 stops');
+    }
+    const stops: GradientStop[] = [];
+    for (let i = 0; i < rawStops.length; i++) {
+      const s = rawStops[i];
+      if (!Array.isArray(s) || s.length !== 2) {
+        throw new PaletteError(`Transition stop ${i} must be in format [t, filament]`);
+      }
+      if (typeof s[0] !== 'number') {
+        throw new PaletteError(`Transition stop ${i}: t must be a number`);
+      }
+      if (typeof s[1] !== 'number' || !Number.isInteger(s[1])) {
+        throw new PaletteError(`Transition stop ${i}: filament must be an integer`);
+      }
+      stops.push({ t: s[0] as number, filament: s[1] as number });
+    }
+
+    let transitionWidthResult: TransitionWidth = { mode: 'auto' };
+    const rawTW = raw['transition_width'];
+    if (rawTW && typeof rawTW === 'object' && !Array.isArray(rawTW)) {
+      const twObj = rawTW as Record<string, unknown>;
+      const mode = twObj['mode'];
+      if (mode === 'percent' && typeof twObj['value'] === 'number') {
+        transitionWidthResult = { mode: 'percent', value: twObj['value'] as number };
+      } else if (mode === 'mm' && typeof twObj['value'] === 'number') {
+        transitionWidthResult = { mode: 'mm', value: twObj['value'] as number };
+      } else {
+        transitionWidthResult = { mode: 'auto' };
+      }
+    }
+
+    const rawMCL = raw['max_cycle_length'];
+    const maxCycleLength = typeof rawMCL === 'number' && Number.isInteger(rawMCL) && rawMCL >= 1
+      ? rawMCL
+      : 2;
+
+    return { type: 'transition' as const, stops, transitionWidth: transitionWidthResult, maxCycleLength };
+  },
+};
+
+registerPalette(transitionStrategy as PaletteStrategy);

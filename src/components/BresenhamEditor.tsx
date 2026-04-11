@@ -3,12 +3,12 @@ import { FILAMENT_COLORS } from '../constants';
 import { MAX_FILAMENTS } from '../lib/encoding';
 import type { GradientStop } from '../lib/config';
 
-interface GradientEditorProps {
+interface BresenhamEditorProps {
   stops: GradientStop[];
   onChange: (stops: GradientStop[]) => void;
 }
 
-function buildGradientCSS(stops: GradientStop[]): string {
+function buildBresenhamCSS(stops: GradientStop[]): string {
   if (stops.length === 0) return 'transparent';
   const sorted = [...stops].sort((a, b) => a.t - b.t);
   const parts = sorted.map(
@@ -17,7 +17,7 @@ function buildGradientCSS(stops: GradientStop[]): string {
   return `linear-gradient(to right, ${parts.join(', ')})`;
 }
 
-export function GradientEditor({ stops, onChange }: GradientEditorProps) {
+export function BresenhamEditor({ stops, onChange }: BresenhamEditorProps) {
   const { t } = useTranslation();
   const updateStop = (index: number, patch: Partial<GradientStop>) => {
     const next = stops.map((s, i) => (i === index ? { ...s, ...patch } : s));
@@ -36,13 +36,13 @@ export function GradientEditor({ stops, onChange }: GradientEditorProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-xs text-gray-500 dark:text-gray-400">
-        {t('gradientEditor.label', { count: stops.length })}
+        {t('bresenhamEditor.label', { count: stops.length })}
       </span>
 
       {/* Preview bar */}
       <div
         className="h-3 rounded-sm border border-gray-300 dark:border-gray-600"
-        style={{ background: buildGradientCSS(stops) }}
+        style={{ background: buildBresenhamCSS(stops) }}
       />
 
       <div className="flex flex-col gap-1">
@@ -73,7 +73,7 @@ export function GradientEditor({ stops, onChange }: GradientEditorProps) {
               <button
                 onClick={() => removeStop(i)}
                 className="text-gray-400 hover:text-red-500 text-xs leading-none"
-                title={t('gradientEditor.removeStopTooltip')}
+                title={t('bresenhamEditor.removeStopTooltip')}
               >
                 ×
               </button>
@@ -86,7 +86,7 @@ export function GradientEditor({ stops, onChange }: GradientEditorProps) {
         onClick={addStop}
         className="self-start rounded border border-dashed border-gray-300 dark:border-gray-600 px-2 py-0.5 text-xs text-gray-500 hover:text-indigo-600 hover:border-indigo-400"
       >
-        {t('gradientEditor.addStop')}
+        {t('bresenhamEditor.addStop')}
       </button>
     </div>
   );

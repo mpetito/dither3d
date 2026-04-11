@@ -34,7 +34,8 @@
     "filamentRemoved": "{{index}} (removed)",
     "removeMappingTooltip": "Remove mapping",
     "typeCyclic": "Cyclic",
-    "typeGradient": "Gradient",
+    "typeBresenham": "Bresenham",
+    "typeTransition": "Transition",
     "addMapping": "+ Add mapping"
   },
   "filamentColorEditor": {
@@ -77,10 +78,19 @@
     "heading": "Something went wrong",
     "retry": "Try Again"
   },
-  "gradientEditor": {
-    "label": "Gradient ({{count}} stops)",
+  "bresenhamEditor": {
+    "label": "Bresenham ({{count}} stops)",
     "removeStopTooltip": "Remove stop",
     "addStop": "+ Add stop"
+  },
+  "transitionEditor": {
+    "label": "Transition ({{count}} stops)",
+    "removeStopTooltip": "Remove stop",
+    "addStop": "+ Add stop",
+    "widthModeAuto": "Auto",
+    "widthModePercent": "Percent",
+    "widthModeMm": "mm",
+    "maxCycleLength": "Max cycle length"
   },
   "cyclicEditor": {
     "label": "Pattern ({{count}} slots)",
@@ -95,9 +105,13 @@
       "label": "Benchy – Cyclic",
       "description": "3DBenchy with cyclic red/blue dithering"
     },
-    "benchy2colorGradient": {
-      "label": "Benchy – Gradient",
-      "description": "2-color 3DBenchy with gradient palette"
+    "benchy2colorBresenham": {
+      "label": "Benchy – Bresenham",
+      "description": "2-color 3DBenchy with Bresenham palette"
+    },
+    "benchy2colorTransition": {
+      "label": "Benchy – Transition",
+      "description": "2-color 3DBenchy with transition palette"
     },
     "cylinderCyclic": {
       "label": "Cylinder – Cyclic",

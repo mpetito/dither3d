@@ -1,6 +1,6 @@
-/** Tests for cyclic and gradient palette application. */
+/** Tests for cyclic and bresenham palette application. */
 import { describe, it, expect } from 'vitest';
-import { applyCyclic, buildGradientLayerMap, applyGradient } from '../palette';
+import { applyCyclic, buildBresenhamLayerMap, applyBresenham, buildTransitionLayerMap, applyTransition } from '../palette';
 
 describe('applyCyclic', () => {
   it('applies a 2-color repeating pattern', () => {
@@ -28,9 +28,9 @@ describe('applyCyclic', () => {
   });
 });
 
-describe('buildGradientLayerMap', () => {
-  it('builds a 2-stop gradient', () => {
-    const map = buildGradientLayerMap(10, [[0.0, 1], [1.0, 2]]);
+describe('buildBresenhamLayerMap', () => {
+  it('builds a 2-stop bresenham map', () => {
+    const map = buildBresenhamLayerMap(10, [[0.0, 1], [1.0, 2]]);
     expect(map.length).toBe(10);
     // First layer should be color 1
     expect(map[0]).toBe(1);
@@ -42,8 +42,8 @@ describe('buildGradientLayerMap', () => {
     expect(values.has(2)).toBe(true);
   });
 
-  it('builds a 3-stop gradient', () => {
-    const map = buildGradientLayerMap(20, [[0.0, 1], [0.5, 2], [1.0, 3]]);
+  it('builds a 3-stop bresenham map', () => {
+    const map = buildBresenhamLayerMap(20, [[0.0, 1], [0.5, 2], [1.0, 3]]);
     expect(map.length).toBe(20);
     expect(map[0]).toBe(1);
     expect(map[19]).toBe(3);
@@ -53,16 +53,16 @@ describe('buildGradientLayerMap', () => {
   });
 
   it('returns first stop color for single layer', () => {
-    const map = buildGradientLayerMap(1, [[0.0, 5], [1.0, 6]]);
+    const map = buildBresenhamLayerMap(1, [[0.0, 5], [1.0, 6]]);
     expect(map.length).toBe(1);
     expect(map[0]).toBe(5);
   });
 });
 
-describe('applyGradient', () => {
-  it('maps face layer indices through gradient', () => {
+describe('applyBresenham', () => {
+  it('maps face layer indices through bresenham', () => {
     const layers = new Uint32Array([0, 4, 9]);
-    const result = applyGradient(layers, 10, [[0.0, 1], [1.0, 2]]);
+    const result = applyBresenham(layers, 10, [[0.0, 1], [1.0, 2]]);
     expect(result.length).toBe(3);
     // Layer 0 → first stop color
     expect(result[0]).toBe(1);
@@ -72,13 +72,137 @@ describe('applyGradient', () => {
 
   it('clamps out-of-range indices', () => {
     const layers = new Uint32Array([0, 100]);
-    const result = applyGradient(layers, 10, [[0.0, 1], [1.0, 2]]);
+    const result = applyBresenham(layers, 10, [[0.0, 1], [1.0, 2]]);
     // Index 100 should be clamped to last layer
     expect(result[1]).toBe(2);
   });
 
   it('requires at least 2 stops', () => {
     const layers = new Uint32Array([0]);
-    expect(() => applyGradient(layers, 10, [[0.5, 1]])).toThrow('at least 2 stops');
+    expect(() => applyBresenham(layers, 10, [[0.5, 1]])).toThrow('at least 2 stops');
+  });
+});
+
+describe('buildTransitionLayerMap', () => {
+  it('solid region when both stops same filament', () => {
+    const map = buildTransitionLayerMap(10, [[0, 1], [1, 1]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    expect(Array.from(map)).toEqual(Array(10).fill(1));
+  });
+
+  it('two-stop transition has both colors', () => {
+    const map = buildTransitionLayerMap(20, [[0, 1], [1, 2]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    expect(map.length).toBe(20);
+    const vals = new Set(Array.from(map));
+    expect(vals.has(1)).toBe(true);
+    expect(vals.has(2)).toBe(true);
+  });
+
+  it('first layers are solid left filament', () => {
+    const map = buildTransitionLayerMap(50, [[0, 1], [1, 2]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    // first few layers should be solid filament 1
+    expect(map[0]).toBe(1);
+    expect(map[1]).toBe(1);
+  });
+
+  it('last layers are solid right filament', () => {
+    const map = buildTransitionLayerMap(50, [[0, 1], [1, 2]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    expect(map[49]).toBe(2);
+    expect(map[48]).toBe(2);
+  });
+
+  it('returns single-element for totalLayers=1', () => {
+    const map = buildTransitionLayerMap(1, [[0, 3], [1, 4]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    expect(map.length).toBe(1);
+  });
+
+  it('returns empty for totalLayers=0', () => {
+    const map = buildTransitionLayerMap(0, [[0, 1], [1, 2]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    expect(map.length).toBe(0);
+  });
+
+  it('percent width mode works', () => {
+    const map = buildTransitionLayerMap(20, [[0, 1], [1, 2]], { mode: 'percent', value: 0.5 }, 2, { layerHeightMm: 0.12 });
+    expect(map.length).toBe(20);
+    const vals = new Set(Array.from(map));
+    expect(vals.has(1)).toBe(true);
+    expect(vals.has(2)).toBe(true);
+  });
+
+  it('mm width mode works', () => {
+    const map = buildTransitionLayerMap(100, [[0, 1], [1, 2]], { mode: 'mm', value: 2.4 }, 2, { layerHeightMm: 0.12 });
+    expect(map.length).toBe(100);
+    const vals = new Set(Array.from(map));
+    expect(vals.has(1)).toBe(true);
+    expect(vals.has(2)).toBe(true);
+  });
+
+  it('maxCycleLength=1 produces strict alternation in band', () => {
+    const map = buildTransitionLayerMap(40, [[0, 1], [1, 2]], { mode: 'percent', value: 1.0 }, 1, { layerHeightMm: 0.12 });
+    // With maxCycleLength=1 and 100% width, every layer alternates
+    let maxRun = 1;
+    let currentRun = 1;
+    for (let i = 1; i < map.length; i++) {
+      if (map[i] === map[i - 1]) {
+        currentRun++;
+        if (currentRun > maxRun) maxRun = currentRun;
+      } else {
+        currentRun = 1;
+      }
+    }
+    expect(maxRun).toBeLessThanOrEqual(1);
+  });
+
+  it('no run in full-width band exceeds maxCycleLength', () => {
+    for (const mc of [1, 2, 3, 5]) {
+      const map = buildTransitionLayerMap(100, [[0, 1], [1, 2]], { mode: 'percent', value: 1.0 }, mc, { layerHeightMm: 0.12 });
+      let maxRun = 1;
+      let currentRun = 1;
+      for (let i = 1; i < map.length; i++) {
+        if (map[i] === map[i - 1]) {
+          currentRun++;
+          if (currentRun > maxRun) maxRun = currentRun;
+        } else {
+          currentRun = 1;
+        }
+      }
+      expect(maxRun).toBeLessThanOrEqual(mc);
+    }
+  });
+
+  it('fi1 density increases across the band', () => {
+    const map = buildTransitionLayerMap(100, [[0, 1], [1, 2]], { mode: 'percent', value: 1.0 }, 2, { layerHeightMm: 0.12 });
+    // Count fi1 in first quarter vs last quarter
+    let firstQ = 0;
+    let lastQ = 0;
+    for (let i = 0; i < 25; i++) {
+      if (map[i] === 2) firstQ++;
+    }
+    for (let i = 75; i < 100; i++) {
+      if (map[i] === 2) lastQ++;
+    }
+    expect(lastQ).toBeGreaterThan(firstQ);
+  });
+
+  it('three stops produce three regions', () => {
+    const map = buildTransitionLayerMap(60, [[0, 1], [0.5, 2], [1, 3]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    const vals = new Set(Array.from(map));
+    expect(vals.has(1)).toBe(true);
+    expect(vals.has(2)).toBe(true);
+    expect(vals.has(3)).toBe(true);
+  });
+});
+
+describe('applyTransition', () => {
+  it('maps layer indices through transition', () => {
+    const layers = new Uint32Array([0, 4, 9]);
+    const result = applyTransition(layers, 10, [[0, 1], [1, 2]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    expect(result.length).toBe(3);
+    expect(result[0]).toBe(1); // first layer = first filament
+  });
+
+  it('clamps out-of-range indices', () => {
+    const layers = new Uint32Array([0, 100]);
+    const result = applyTransition(layers, 10, [[0, 1], [1, 2]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    expect(result[1]).toBe(2); // out of range should clamp to last
   });
 });

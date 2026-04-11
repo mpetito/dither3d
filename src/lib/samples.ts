@@ -30,11 +30,18 @@ export const SAMPLES: readonly SampleDefinition[] = [
     descriptionKey: 'samples.benchyCyclic.description',
   },
   {
-    id: 'benchy-2color-gradient',
+    id: 'benchy-2color-bresenham',
     modelPath: '/samples/3DBenchy-2color.3mf',
-    configPath: '/samples/3DBenchy-2color-gradient.config.json',
-    labelKey: 'samples.benchy2colorGradient.label',
-    descriptionKey: 'samples.benchy2colorGradient.description',
+    configPath: '/samples/3DBenchy-2color-bresenham.config.json',
+    labelKey: 'samples.benchy2colorBresenham.label',
+    descriptionKey: 'samples.benchy2colorBresenham.description',
+  },
+  {
+    id: 'benchy-2color-transition',
+    modelPath: '/samples/3DBenchy-2color.3mf',
+    configPath: '/samples/3DBenchy-2color-transition.config.json',
+    labelKey: 'samples.benchy2colorTransition.label',
+    descriptionKey: 'samples.benchy2colorTransition.description',
   },
   {
     id: 'cylinder-cyclic',

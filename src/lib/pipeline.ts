@@ -10,7 +10,7 @@ import {
   LAYER_EPSILON_FACTOR,
 } from './mesh';
 import { MIN_ABSOLUTE_EPSILON } from '../constants';
-import { getPaletteStrategy } from './palette';
+import { getPaletteStrategy, type PaletteContext } from './palette';
 import { encodeBoundaryFaces, type EncodeBoundaryOptions } from './subdivision';
 import { encodeBoundaryFacesParallel } from './subdivision-pool';
 import { read3mf, write3mf, type ThreeMFData } from './threemf';
@@ -77,6 +77,7 @@ export function buildClusterLayerData(
   layerHeight: number,
   clusterInfos: ClusterInfo[],
   defaultFilament: number,
+  layerHeightMm: number,
 ): { clusterLayerMaps: Uint8Array[]; globalZMin: number; totalLayers: number } {
   const epsilon = Math.max(layerHeight * LAYER_EPSILON_FACTOR, MIN_ABSOLUTE_EPSILON);
 
@@ -125,7 +126,8 @@ export function buildClusterLayerData(
     );
 
     const strategy = getPaletteStrategy(info.palette.type);
-    const layerValues = strategy.buildLayerMap(info.regionLayers, info.palette);
+    const ctx: PaletteContext = { layerHeightMm };
+    const layerValues = strategy.buildLayerMap(info.regionLayers, info.palette, ctx);
     for (let gl = regionOffset; gl < regionOffset + info.regionLayers && gl < totalLayers; gl++) {
       const localL = gl - regionOffset;
       if (localL < layerValues.length) {
@@ -251,7 +253,8 @@ async function runPipeline(
     totalLayerCount = Math.max(totalLayerCount, regionLayers);
 
     const strategy = getPaletteStrategy(palette.type);
-    const assigned = strategy.apply(layerIndices, regionLayers, palette);
+    const ctx: PaletteContext = { layerHeightMm: config.layerHeightMm };
+    const assigned = strategy.apply(layerIndices, regionLayers, palette, ctx);
 
     for (let k = 0; k < faceIndices.length; k++) {
       faceFilaments[faceIndices[k]] = assigned[k];
@@ -284,6 +287,7 @@ async function runPipeline(
     config.layerHeightMm,
     clusterInfos,
     defaultFilament,
+    config.layerHeightMm,
   );
 
   // Step 6: Bisection encoding for boundary faces (via injected strategy)

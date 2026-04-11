@@ -40,7 +40,7 @@ describe('buildClusterLayerData', () => {
       },
     ];
 
-    const result = buildClusterLayerData(mesh, layerHeight, clusterInfos, 0);
+    const result = buildClusterLayerData(mesh, layerHeight, clusterInfos, 0, layerHeight);
 
     expect(result.clusterLayerMaps).toHaveLength(2);
     expect(result.totalLayers).toBeGreaterThanOrEqual(1);
@@ -64,7 +64,7 @@ describe('buildClusterLayerData', () => {
     const layerHeight = 0.2;
     const defaultFilament = 5;
 
-    const result = buildClusterLayerData(mesh, layerHeight, [], defaultFilament);
+    const result = buildClusterLayerData(mesh, layerHeight, [], defaultFilament, layerHeight);
 
     expect(result.clusterLayerMaps).toHaveLength(1);
     expect(result.totalLayers).toBeGreaterThanOrEqual(1);
@@ -89,7 +89,7 @@ describe('buildClusterLayerData', () => {
       },
     ];
 
-    const result = buildClusterLayerData(mesh, layerHeight, clusterInfos, defaultFilament);
+    const result = buildClusterLayerData(mesh, layerHeight, clusterInfos, defaultFilament, layerHeight);
     const map = result.clusterLayerMaps[0];
 
     // Layers beyond the cluster's region should be the default filament

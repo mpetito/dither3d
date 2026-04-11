@@ -16,14 +16,29 @@ const VALID_CYCLIC_JSON = JSON.stringify({
     ],
 });
 
-const VALID_GRADIENT_JSON = JSON.stringify({
+const VALID_BRESENHAM_JSON = JSON.stringify({
     layer_height_mm: 0.1,
     color_mappings: [
         {
             input_filament: 1,
             output_palette: {
-                type: 'gradient',
+                type: 'bresenham',
                 stops: [[0.0, 1], [0.5, 2], [1.0, 3]],
+            },
+        },
+    ],
+});
+
+const VALID_TRANSITION_JSON = JSON.stringify({
+    layer_height_mm: 0.1,
+    color_mappings: [
+        {
+            input_filament: 1,
+            output_palette: {
+                type: 'transition',
+                stops: [[0.0, 1], [1.0, 2]],
+                transition_width: { mode: 'auto' },
+                max_cycle_length: 2,
             },
         },
     ],
@@ -46,12 +61,12 @@ describe('loadConfigFromJson', () => {
         expect(cfg.boundaryStrategy).toBe('bisection');
     });
 
-    it('parses a valid gradient config', () => {
-        const cfg = loadConfigFromJson(VALID_GRADIENT_JSON);
+    it('parses a valid bresenham config', () => {
+        const cfg = loadConfigFromJson(VALID_BRESENHAM_JSON);
         expect(cfg.colorMappings).toHaveLength(1);
         const palette = cfg.colorMappings[0].outputPalette;
-        expect(palette.type).toBe('gradient');
-        if (palette.type === 'gradient') {
+        expect(palette.type).toBe('bresenham');
+        if (palette.type === 'bresenham') {
             expect(palette.stops).toHaveLength(3);
             expect(palette.stops[0]).toEqual({ t: 0.0, filament: 1 });
             expect(palette.stops[1]).toEqual({ t: 0.5, filament: 2 });
@@ -88,6 +103,55 @@ describe('loadConfigFromJson', () => {
         });
         expect(() => loadConfigFromJson(json)).toThrow(ConfigError);
         expect(() => loadConfigFromJson(json)).toThrow('Unknown palette type');
+    });
+
+    it('parses a valid transition config', () => {
+        const cfg = loadConfigFromJson(VALID_TRANSITION_JSON);
+        expect(cfg.colorMappings).toHaveLength(1);
+        const palette = cfg.colorMappings[0].outputPalette;
+        expect(palette.type).toBe('transition');
+        if (palette.type === 'transition') {
+            expect(palette.stops).toHaveLength(2);
+            expect(palette.transitionWidth).toEqual({ mode: 'auto' });
+            expect(palette.maxCycleLength).toBe(2);
+        }
+    });
+
+    it('defaults transition_width to auto when missing', () => {
+        const json = JSON.stringify({
+            layer_height_mm: 0.1,
+            color_mappings: [{
+                input_filament: 1,
+                output_palette: { type: 'transition', stops: [[0, 1], [1, 2]] },
+            }],
+        });
+        const cfg = loadConfigFromJson(json);
+        const palette = cfg.colorMappings[0].outputPalette;
+        if (palette.type === 'transition') {
+            expect(palette.transitionWidth).toEqual({ mode: 'auto' });
+            expect(palette.maxCycleLength).toBe(2);
+        }
+    });
+
+    it('parses transition with percent width', () => {
+        const json = JSON.stringify({
+            layer_height_mm: 0.1,
+            color_mappings: [{
+                input_filament: 1,
+                output_palette: {
+                    type: 'transition',
+                    stops: [[0, 1], [1, 2]],
+                    transition_width: { mode: 'percent', value: 0.5 },
+                    max_cycle_length: 3,
+                },
+            }],
+        });
+        const cfg = loadConfigFromJson(json);
+        const palette = cfg.colorMappings[0].outputPalette;
+        if (palette.type === 'transition') {
+            expect(palette.transitionWidth).toEqual({ mode: 'percent', value: 0.5 });
+            expect(palette.maxCycleLength).toBe(3);
+        }
     });
 });
 
@@ -163,13 +227,13 @@ describe('validateConfig', () => {
         expect(() => validateConfig(cfg)).toThrow('outside range');
     });
 
-    it('throws when gradient stops not sorted', () => {
+    it('throws when bresenham stops not sorted', () => {
         const cfg = testConfig({
             colorMappings: [
                 {
                     inputFilament: 1,
                     outputPalette: {
-                        type: 'gradient',
+                        type: 'bresenham',
                         stops: [{ t: 0.5, filament: 1 }, { t: 0.2, filament: 2 }],
                     },
                 },
@@ -179,13 +243,13 @@ describe('validateConfig', () => {
         expect(() => validateConfig(cfg)).toThrow('not sorted');
     });
 
-    it('throws when gradient t outside [0, 1]', () => {
+    it('throws when bresenham t outside [0, 1]', () => {
         const cfg = testConfig({
             colorMappings: [
                 {
                     inputFilament: 1,
                     outputPalette: {
-                        type: 'gradient',
+                        type: 'bresenham',
                         stops: [{ t: -0.1, filament: 1 }, { t: 1.0, filament: 2 }],
                     },
                 },
@@ -214,6 +278,54 @@ describe('validateConfig', () => {
         const cfg = testConfig({ layerHeightMm: 0.04, maxSplitDepth: 9 });
         const warnings = validateConfig(cfg);
         expect(warnings.every((w) => !w.includes('too shallow'))).toBe(true);
+    });
+
+    it('throws when transition stops not sorted', () => {
+        const cfg = testConfig({
+            colorMappings: [{
+                inputFilament: 1,
+                outputPalette: {
+                    type: 'transition',
+                    stops: [{ t: 0.5, filament: 1 }, { t: 0.2, filament: 2 }],
+                    transitionWidth: { mode: 'auto' },
+                    maxCycleLength: 2,
+                },
+            }],
+        });
+        expect(() => validateConfig(cfg)).toThrow(ConfigError);
+        expect(() => validateConfig(cfg)).toThrow('not sorted');
+    });
+
+    it('throws when transition maxCycleLength < 1', () => {
+        const cfg = testConfig({
+            colorMappings: [{
+                inputFilament: 1,
+                outputPalette: {
+                    type: 'transition',
+                    stops: [{ t: 0, filament: 1 }, { t: 1, filament: 2 }],
+                    transitionWidth: { mode: 'auto' },
+                    maxCycleLength: 0,
+                },
+            }],
+        });
+        expect(() => validateConfig(cfg)).toThrow(ConfigError);
+        expect(() => validateConfig(cfg)).toThrow('maxCycleLength');
+    });
+
+    it('throws when transition has fewer than 2 stops', () => {
+        const cfg = testConfig({
+            colorMappings: [{
+                inputFilament: 1,
+                outputPalette: {
+                    type: 'transition',
+                    stops: [{ t: 0, filament: 1 }],
+                    transitionWidth: { mode: 'auto' },
+                    maxCycleLength: 2,
+                },
+            }],
+        });
+        expect(() => validateConfig(cfg)).toThrow(ConfigError);
+        expect(() => validateConfig(cfg)).toThrow('at least 2 stops');
     });
 });
 
@@ -260,7 +372,7 @@ describe('configToJson round-trip', () => {
         expect(restored.colorMappings[0].outputPalette).toEqual({ type: 'cyclic', pattern: [1, 2, 3] });
     });
 
-    it('preserves gradient config through round-trip', () => {
+    it('preserves bresenham config through round-trip', () => {
         const original: Dither3DConfig = {
             layerHeightMm: 0.08,
             targetFormat: 'prusaslicer',
@@ -268,7 +380,7 @@ describe('configToJson round-trip', () => {
                 {
                     inputFilament: 2,
                     outputPalette: {
-                        type: 'gradient',
+                        type: 'bresenham',
                         stops: [{ t: 0.0, filament: 1 }, { t: 1.0, filament: 3 }],
                     },
                 },
@@ -285,11 +397,22 @@ describe('configToJson round-trip', () => {
         expect(restored.maxSplitDepth).toBe(original.maxSplitDepth);
         expect(restored.colorMappings[0].inputFilament).toBe(2);
         const palette = restored.colorMappings[0].outputPalette;
-        expect(palette.type).toBe('gradient');
-        if (palette.type === 'gradient') {
+        expect(palette.type).toBe('bresenham');
+        if (palette.type === 'bresenham') {
             expect(palette.stops).toHaveLength(2);
             expect(palette.stops[0]).toEqual({ t: 0.0, filament: 1 });
             expect(palette.stops[1]).toEqual({ t: 1.0, filament: 3 });
+        }
+    });
+
+    it('round-trips a transition config', () => {
+        const cfg = loadConfigFromJson(VALID_TRANSITION_JSON);
+        const json = configToJson(cfg);
+        const cfg2 = loadConfigFromJson(JSON.stringify(json));
+        expect(cfg2.colorMappings[0].outputPalette.type).toBe('transition');
+        if (cfg2.colorMappings[0].outputPalette.type === 'transition') {
+            expect(cfg2.colorMappings[0].outputPalette.transitionWidth).toEqual({ mode: 'auto' });
+            expect(cfg2.colorMappings[0].outputPalette.maxCycleLength).toBe(2);
         }
     });
 });
@@ -319,24 +442,24 @@ describe('palette parse validation', () => {
         expect(() => loadConfigFromJson(json)).toThrow(/expected integer/);
     });
 
-    it('rejects gradient stop with non-numeric t', () => {
+    it('rejects bresenham stop with non-numeric t', () => {
         const json = JSON.stringify({
             layer_height_mm: 0.1,
             color_mappings: [{
                 input_filament: 1,
-                output_palette: { type: 'gradient', stops: [['start', 1], [1.0, 2]] },
+                output_palette: { type: 'bresenham', stops: [['start', 1], [1.0, 2]] },
             }],
         });
         expect(() => loadConfigFromJson(json)).toThrow(ConfigError);
         expect(() => loadConfigFromJson(json)).toThrow(/t must be a number/);
     });
 
-    it('rejects gradient stop with non-integer filament', () => {
+    it('rejects bresenham stop with non-integer filament', () => {
         const json = JSON.stringify({
             layer_height_mm: 0.1,
             color_mappings: [{
                 input_filament: 1,
-                output_palette: { type: 'gradient', stops: [[0.0, 1.5], [1.0, 2]] },
+                output_palette: { type: 'bresenham', stops: [[0.0, 1.5], [1.0, 2]] },
             }],
         });
         expect(() => loadConfigFromJson(json)).toThrow(ConfigError);

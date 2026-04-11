@@ -60,7 +60,7 @@ describe('SamplePicker', () => {
   it('renders sample buttons when open', () => {
     renderWithContext(<SamplePicker open={true} onClose={onClose} />);
     expect(screen.getByText('Benchy – Cyclic')).toBeInTheDocument();
-    expect(screen.getByText('Benchy – Gradient')).toBeInTheDocument();
+    expect(screen.getByText('Benchy – Bresenham')).toBeInTheDocument();
     expect(screen.getByText('Cylinder – Cyclic')).toBeInTheDocument();
   });
 
