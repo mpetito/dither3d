@@ -295,6 +295,8 @@ describe('transitionStrategy.parse validation', () => {
       type: 'transition',
       stops: [[0, 1], [1, 2]],
     });
+    expect(result.type).toBe('transition');
+    if (result.type !== 'transition') throw new Error('unreachable');
     expect(result.transitionWidth).toEqual({ mode: 'auto' });
     expect(result.maxCycleLength).toBe(2);
   });
