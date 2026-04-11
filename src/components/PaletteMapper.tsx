@@ -3,7 +3,9 @@ import type { ColorMapping, Palette, Dither3DConfig, TransitionPalette } from ".
 import { getPaletteTypes } from "../lib/palette";
 import { useAppState, useAppDispatch } from "../state/AppContext";
 import { CyclicEditor } from "./CyclicEditor";
-import { BresenhamEditor } from "./BresenhamEditor";import { TransitionEditor } from './TransitionEditor';import { ConfigImportButton } from "./ConfigImportExport";
+import { BresenhamEditor } from "./BresenhamEditor";
+import { TransitionEditor } from "./TransitionEditor";
+import { ConfigImportButton } from "./ConfigImportExport";
 
 function paletteTypeOf(mapping: ColorMapping | undefined): string {
   if (!mapping) return "none";

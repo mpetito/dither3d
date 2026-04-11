@@ -1,6 +1,6 @@
 /** Tests for cyclic and bresenham palette application. */
 import { describe, it, expect } from 'vitest';
-import { applyCyclic, buildBresenhamLayerMap, applyBresenham, buildTransitionLayerMap, applyTransition } from '../palette';
+import { applyCyclic, buildBresenhamLayerMap, applyBresenham, buildTransitionLayerMap, applyTransition, getPaletteStrategy } from '../palette';
 
 describe('applyCyclic', () => {
   it('applies a 2-color repeating pattern', () => {
@@ -190,6 +190,22 @@ describe('buildTransitionLayerMap', () => {
     expect(vals.has(2)).toBe(true);
     expect(vals.has(3)).toBe(true);
   });
+
+  it('three-stop auto gives equal solid regions for edge and interior stops', () => {
+    const map = buildTransitionLayerMap(100, [[0, 1], [0.5, 2], [1, 3]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    // Count contiguous solid regions at start (filament 1) and end (filament 3)
+    let solidFirst = 0;
+    for (let i = 0; i < map.length && map[i] === 1; i++) solidFirst++;
+    let solidLast = 0;
+    for (let i = map.length - 1; i >= 0 && map[i] === 3; i--) solidLast++;
+    // With 3 stops auto: (2N-1)=5 equal regions, each ~20 layers.
+    // Edge solids should be roughly equal to each other and close to 20.
+    expect(Math.abs(solidFirst - solidLast)).toBeLessThanOrEqual(2);
+    expect(solidFirst).toBeGreaterThanOrEqual(18);
+    expect(solidFirst).toBeLessThanOrEqual(23);
+    expect(solidLast).toBeGreaterThanOrEqual(18);
+    expect(solidLast).toBeLessThanOrEqual(23);
+  });
 });
 
 describe('applyTransition', () => {
@@ -204,5 +220,82 @@ describe('applyTransition', () => {
     const layers = new Uint32Array([0, 100]);
     const result = applyTransition(layers, 10, [[0, 1], [1, 2]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
     expect(result[1]).toBe(2); // out of range should clamp to last
+  });
+});
+
+describe('getPaletteStrategy', () => {
+  it('resolves "gradient" as alias for "bresenham"', () => {
+    const strategy = getPaletteStrategy('gradient');
+    expect(strategy.type).toBe('bresenham');
+  });
+
+  it('throws for unknown palette type', () => {
+    expect(() => getPaletteStrategy('nonexistent')).toThrow('Unknown palette type');
+  });
+});
+
+describe('buildTransitionLayerMap edge fill', () => {
+  it('fills layers before first stop with first filament', () => {
+    // Stops at t=0.5 and t=1.0 — layers 0..49 should be first filament
+    const map = buildTransitionLayerMap(100, [[0.5, 3], [1, 4]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    for (let l = 0; l < 49; l++) {
+      expect(map[l]).toBe(3);
+    }
+  });
+
+  it('fills layers after last stop with last filament', () => {
+    // Stops at t=0 and t=0.5 — layers after 50 should be last filament
+    const map = buildTransitionLayerMap(100, [[0, 3], [0.5, 4]], { mode: 'auto' }, 2, { layerHeightMm: 0.12 });
+    for (let l = 51; l < 100; l++) {
+      expect(map[l]).toBe(4);
+    }
+  });
+});
+
+describe('transitionStrategy.parse validation', () => {
+  it('throws for percent mode without numeric value', () => {
+    const strategy = getPaletteStrategy('transition');
+    expect(() => strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+      transition_width: { mode: 'percent', value: 'bad' },
+    })).toThrow("requires a numeric 'value'");
+  });
+
+  it('throws for mm mode without numeric value', () => {
+    const strategy = getPaletteStrategy('transition');
+    expect(() => strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+      transition_width: { mode: 'mm' },
+    })).toThrow("requires a numeric 'value'");
+  });
+
+  it('throws for unknown transition_width mode', () => {
+    const strategy = getPaletteStrategy('transition');
+    expect(() => strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+      transition_width: { mode: 'invalid' },
+    })).toThrow('Unknown transition_width mode');
+  });
+
+  it('throws for invalid max_cycle_length', () => {
+    const strategy = getPaletteStrategy('transition');
+    expect(() => strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+      max_cycle_length: 0,
+    })).toThrow('max_cycle_length must be a positive integer');
+  });
+
+  it('defaults omitted fields without error', () => {
+    const strategy = getPaletteStrategy('transition');
+    const result = strategy.parse({
+      type: 'transition',
+      stops: [[0, 1], [1, 2]],
+    });
+    expect(result.transitionWidth).toEqual({ mode: 'auto' });
+    expect(result.maxCycleLength).toBe(2);
   });
 });
