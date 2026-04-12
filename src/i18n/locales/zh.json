@@ -34,7 +34,8 @@
     "filamentRemoved": "{{index}}（已移除）",
     "removeMappingTooltip": "移除映射",
     "typeCyclic": "循环",
-    "typeGradient": "渐变",
+    "typeBresenham": "Bresenham",
+    "typeTransition": "过渡",
     "addMapping": "+ 添加映射"
   },
   "filamentColorEditor": {
@@ -77,10 +78,19 @@
     "heading": "出了点问题",
     "retry": "重试"
   },
-  "gradientEditor": {
-    "label": "渐变（{{count}} 个节点）",
+  "bresenhamEditor": {
+    "label": "Bresenham（{{count}} 个节点）",
     "removeStopTooltip": "移除节点",
     "addStop": "+ 添加节点"
+  },
+  "transitionEditor": {
+    "label": "过渡（{{count}} 个节点）",
+    "removeStopTooltip": "移除节点",
+    "addStop": "+ 添加节点",
+    "widthModeAuto": "自动",
+    "widthModePercent": "百分比",
+    "widthModeMm": "毫米",
+    "maxCycleLength": "最大循环长度"
   },
   "cyclicEditor": {
     "label": "图案（{{count}} 个位置）",
@@ -95,9 +105,13 @@
       "label": "Benchy – 循环",
       "description": "3DBenchy 红/蓝循环抖动"
     },
-    "benchy2colorGradient": {
-      "label": "Benchy – 渐变",
-      "description": "双色 3DBenchy 渐变调色板"
+    "benchy2colorBresenham": {
+      "label": "Benchy – Bresenham",
+      "description": "双色 3DBenchy Bresenham 调色板"
+    },
+    "benchy2colorTransition": {
+      "label": "Benchy – 过渡",
+      "description": "双色3DBenchy过渡调色板"
     },
     "cylinderCyclic": {
       "label": "圆柱 – 循环",

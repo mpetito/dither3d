@@ -34,7 +34,8 @@
     "filamentRemoved": "{{index}} (entfernt)",
     "removeMappingTooltip": "Zuordnung entfernen",
     "typeCyclic": "Zyklisch",
-    "typeGradient": "Verlauf",
+    "typeBresenham": "Bresenham",
+    "typeTransition": "Übergang",
     "addMapping": "+ Zuordnung hinzufügen"
   },
   "filamentColorEditor": {
@@ -77,10 +78,19 @@
     "heading": "Etwas ist schiefgelaufen",
     "retry": "Erneut versuchen"
   },
-  "gradientEditor": {
-    "label": "Verlauf ({{count}} Stufen)",
+  "bresenhamEditor": {
+    "label": "Bresenham ({{count}} Stufen)",
     "removeStopTooltip": "Stufe entfernen",
     "addStop": "+ Stufe hinzufügen"
+  },
+  "transitionEditor": {
+    "label": "Übergang ({{count}} Stufen)",
+    "removeStopTooltip": "Stufe entfernen",
+    "addStop": "+ Stufe hinzufügen",
+    "widthModeAuto": "Auto",
+    "widthModePercent": "Prozent",
+    "widthModeMm": "mm",
+    "maxCycleLength": "Max. Zykluslänge"
   },
   "cyclicEditor": {
     "label": "Muster ({{count}} Plätze)",
@@ -95,9 +105,13 @@
       "label": "Benchy – Zyklisch",
       "description": "3DBenchy mit zyklischem Rot/Blau-Dithering"
     },
-    "benchy2colorGradient": {
-      "label": "Benchy – Verlauf",
-      "description": "2-Farben-3DBenchy mit Verlaufspalette"
+    "benchy2colorBresenham": {
+      "label": "Benchy – Bresenham",
+      "description": "2-Farben-3DBenchy mit Bresenham-Palette"
+    },
+    "benchy2colorTransition": {
+      "label": "Benchy – Übergang",
+      "description": "2-Farben 3DBenchy mit Übergangspalette"
     },
     "cylinderCyclic": {
       "label": "Zylinder – Zyklisch",

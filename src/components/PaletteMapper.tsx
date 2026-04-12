@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
-import type { ColorMapping, Palette, Dither3DConfig } from "../lib/config";
+import type { ColorMapping, Palette, Dither3DConfig, TransitionPalette } from "../lib/config";
 import { getPaletteTypes } from "../lib/palette";
 import { useAppState, useAppDispatch } from "../state/AppContext";
 import { CyclicEditor } from "./CyclicEditor";
-import { GradientEditor } from "./GradientEditor";
+import { BresenhamEditor } from "./BresenhamEditor";
+import { TransitionEditor } from "./TransitionEditor";
 import { ConfigImportButton } from "./ConfigImportExport";
 
 function paletteTypeOf(mapping: ColorMapping | undefined): string {
@@ -12,13 +13,24 @@ function paletteTypeOf(mapping: ColorMapping | undefined): string {
 }
 
 function defaultPalette(type: string): Palette {
-  if (type === "gradient") {
+  if (type === "bresenham") {
     return {
-      type: "gradient",
+      type: "bresenham",
       stops: [
         { t: 0, filament: 1 },
         { t: 1, filament: 2 },
       ],
+    };
+  }
+  if (type === "transition") {
+    return {
+      type: "transition",
+      stops: [
+        { t: 0, filament: 1 },
+        { t: 1, filament: 2 },
+      ],
+      transitionWidth: { mode: 'auto' },
+      maxCycleLength: 2,
     };
   }
   // Default to cyclic for 'cyclic' and any unknown type
@@ -160,11 +172,21 @@ export function PaletteMapper() {
                 }
               />
             )}
-            {mapping.outputPalette.type === "gradient" && (
-              <GradientEditor
+            {mapping.outputPalette.type === "bresenham" && (
+              <BresenhamEditor
                 stops={mapping.outputPalette.stops.map((s) => ({ ...s }))}
                 onChange={(stops) =>
-                  updatePalette(i, { type: "gradient", stops })
+                  updatePalette(i, { type: "bresenham", stops })
+                }
+              />
+            )}
+            {mapping.outputPalette.type === "transition" && (
+              <TransitionEditor
+                stops={mapping.outputPalette.stops.map((s) => ({ ...s }))}
+                transitionWidth={mapping.outputPalette.transitionWidth}
+                maxCycleLength={mapping.outputPalette.maxCycleLength}
+                onChange={(update) =>
+                  updatePalette(i, { ...mapping.outputPalette, ...update } as TransitionPalette)
                 }
               />
             )}

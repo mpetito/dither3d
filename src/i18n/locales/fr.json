@@ -34,7 +34,8 @@
     "filamentRemoved": "{{index}} (supprimé)",
     "removeMappingTooltip": "Supprimer la correspondance",
     "typeCyclic": "Cyclique",
-    "typeGradient": "Dégradé",
+    "typeBresenham": "Bresenham",
+    "typeTransition": "Transition",
     "addMapping": "+ Ajouter une correspondance"
   },
   "filamentColorEditor": {
@@ -77,10 +78,19 @@
     "heading": "Une erreur est survenue",
     "retry": "Réessayer"
   },
-  "gradientEditor": {
-    "label": "Dégradé ({{count}} arrêts)",
+  "bresenhamEditor": {
+    "label": "Bresenham ({{count}} arrêts)",
     "removeStopTooltip": "Supprimer l'arrêt",
     "addStop": "+ Ajouter un arrêt"
+  },
+  "transitionEditor": {
+    "label": "Transition ({{count}} arrêts)",
+    "removeStopTooltip": "Supprimer l'arrêt",
+    "addStop": "+ Ajouter un arrêt",
+    "widthModeAuto": "Auto",
+    "widthModePercent": "Pourcentage",
+    "widthModeMm": "mm",
+    "maxCycleLength": "Longueur max. du cycle"
   },
   "cyclicEditor": {
     "label": "Motif ({{count}} emplacements)",
@@ -95,9 +105,13 @@
       "label": "Benchy – Cyclique",
       "description": "3DBenchy avec tramage cyclique rouge/bleu"
     },
-    "benchy2colorGradient": {
-      "label": "Benchy – Dégradé",
-      "description": "3DBenchy 2 couleurs avec palette en dégradé"
+    "benchy2colorBresenham": {
+      "label": "Benchy – Bresenham",
+      "description": "3DBenchy 2 couleurs avec palette Bresenham"
+    },
+    "benchy2colorTransition": {
+      "label": "Benchy – Transition",
+      "description": "3DBenchy 2 couleurs avec palette de transition"
     },
     "cylinderCyclic": {
       "label": "Cylindre – Cyclique",
