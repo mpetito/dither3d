@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '../../test-setup';
 import { TransitionEditor } from '../TransitionEditor';
 import type { GradientStop } from '../../lib/config';
 

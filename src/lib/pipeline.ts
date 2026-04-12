@@ -77,7 +77,6 @@ export function buildClusterLayerData(
   layerHeight: number,
   clusterInfos: ClusterInfo[],
   defaultFilament: number,
-  layerHeightMm: number,
 ): { clusterLayerMaps: Uint8Array[]; globalZMin: number; totalLayers: number } {
   const epsilon = Math.max(layerHeight * LAYER_EPSILON_FACTOR, MIN_ABSOLUTE_EPSILON);
 
@@ -126,7 +125,7 @@ export function buildClusterLayerData(
     );
 
     const strategy = getPaletteStrategy(info.palette.type);
-    const ctx: PaletteContext = { layerHeightMm };
+    const ctx: PaletteContext = { layerHeightMm: layerHeight };
     const layerValues = strategy.buildLayerMap(info.regionLayers, info.palette, ctx);
     for (let gl = regionOffset; gl < regionOffset + info.regionLayers && gl < totalLayers; gl++) {
       const localL = gl - regionOffset;
@@ -287,7 +286,6 @@ async function runPipeline(
     config.layerHeightMm,
     clusterInfos,
     defaultFilament,
-    config.layerHeightMm,
   );
 
   // Step 6: Bisection encoding for boundary faces (via injected strategy)
