@@ -19,6 +19,11 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+const filamentColors = [
+  '#808080', '#E74C3C', '#3498DB', '#2ECC71', '#F39C12',
+  '#9B59B6', '#1ABC9C', '#E67E22', '#2C3E50', '#27AE60', '#C0392B',
+];
+
 const defaultStops: GradientStop[] = [
   { t: 0, filament: 1 },
   { t: 1, filament: 2 },
@@ -33,6 +38,8 @@ describe('TransitionEditor', () => {
         transitionWidth={{ mode: 'auto' }}
         maxCycleLength={2}
         onChange={onChange}
+        filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     expect(screen.getByText('Transition (2 stops)')).toBeInTheDocument();
@@ -46,6 +53,8 @@ describe('TransitionEditor', () => {
         transitionWidth={{ mode: 'auto' }}
         maxCycleLength={2}
         onChange={onChange}
+        filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     expect(screen.getByText('+ Add stop')).toBeInTheDocument();
@@ -59,6 +68,8 @@ describe('TransitionEditor', () => {
         transitionWidth={{ mode: 'auto' }}
         maxCycleLength={2}
         onChange={onChange}
+        filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     fireEvent.click(screen.getByText('+ Add stop'));
@@ -75,6 +86,8 @@ describe('TransitionEditor', () => {
         transitionWidth={{ mode: 'auto' }}
         maxCycleLength={2}
         onChange={onChange}
+        filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     const selects = screen.getAllByRole('combobox');
@@ -94,6 +107,8 @@ describe('TransitionEditor', () => {
         transitionWidth={{ mode: 'auto' }}
         maxCycleLength={2}
         onChange={onChange}
+        filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     const bar = container.querySelector('.h-3');

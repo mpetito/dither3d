@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { AppProvider } from "./state/AppContext";
+import { AppProvider, useAppState, useAppDispatch } from "./state/AppContext";
 import { FileUpload } from "./components/FileUpload";
 import { MeshViewer } from "./components/MeshViewer";
 import { FilamentList } from "./components/FilamentList";
@@ -18,18 +18,41 @@ import { LanguageSelector } from "./components/LanguageSelector";
 function AppContent() {
   useProcessing();
   const { t } = useTranslation();
+  const { autoApply, status } = useAppState();
+  const dispatch = useAppDispatch();
 
   return (
     <div
       className="grid h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-      style={{ gridTemplateColumns: "320px 1fr", gridTemplateRows: "1fr auto" }}
+      style={{ gridTemplateColumns: "320px 1fr", gridTemplateRows: "auto 1fr auto" }}
     >
-      {/* Left sidebar — spans both rows */}
-      <aside className="row-span-2 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">{t("app.title")}</h1>
-          <LanguageSelector />
+      {/* Full-width header */}
+      <header className="col-span-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-2">
+        <h1 className="text-lg font-bold">{t("app.title")}</h1>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="checkbox"
+              checked={autoApply}
+              onChange={() => dispatch({ type: "TOGGLE_AUTO_APPLY" })}
+              className="accent-indigo-600"
+            />
+            {t('globalSettings.autoApply')}
+          </label>
+          {!autoApply && (
+            <button
+              onClick={() => dispatch({ type: "MANUAL_APPLY" })}
+              disabled={status === 'processing'}
+              className="w-64 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {t('globalSettings.applyButton')}
+            </button>
+          )}
         </div>
+      </header>
+
+      {/* Left sidebar — spans rows 2-3 */}
+      <aside className="row-span-2 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4 flex flex-col gap-4">
         <FileUpload />
         <FilamentList />
         <GlobalSettings />
@@ -58,10 +81,11 @@ function AppContent() {
         </div>
       </main>
 
-      {/* Status bar — bottom-right */}
-      <footer className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between">
+      {/* Status bar — below main viewport */}
+      <footer className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center gap-4">
         <ProcessingStatus />
-        <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 flex-shrink-0">
+        <div className="flex-1" />
+        <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-2 shrink-0">
           {t("app.licenseText")}{" "}
           <a
             href="https://github.com/mpetito/dither3d/blob/main/LICENSE"
@@ -74,7 +98,7 @@ function AppContent() {
           .
           <a
             href="https://github.com/mpetito/dither3d"
-            className="ml-1 hover:text-gray-600 dark:hover:text-gray-400"
+            className="hover:text-gray-600 dark:hover:text-gray-400"
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t("app.githubAriaLabel")}
@@ -89,6 +113,7 @@ function AppContent() {
             </svg>
           </a>
         </p>
+        <LanguageSelector />
       </footer>
     </div>
   );

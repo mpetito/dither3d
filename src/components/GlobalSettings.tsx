@@ -81,6 +81,7 @@ export function GlobalSettings() {
             />
           </label>
         )}
+
       </div>
     </section>
   );
