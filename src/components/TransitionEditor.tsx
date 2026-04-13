@@ -10,6 +10,7 @@ interface TransitionEditorProps {
   maxCycleLength: number;
   onChange: (update: Partial<TransitionPalette>) => void;
   filamentColors: string[];
+  layerHeightMm: number;
 }
 
 function contrastText(hex: string): string {
@@ -25,10 +26,11 @@ function buildPreviewCSS(
   transitionWidth: TransitionWidth,
   maxCycleLength: number,
   filamentColors: string[],
+  layerHeightMm: number,
 ): string {
   if (stops.length < 2) return 'transparent';
 
-  const ctx: PaletteContext = { layerHeightMm: 0.12 };
+  const ctx: PaletteContext = { layerHeightMm };
   const tuples = stops.map((s) => [s.t, s.filament] as [number, number]);
   const layerMap = buildTransitionLayerMap(PREVIEW_LAYERS, tuples, transitionWidth, maxCycleLength, ctx);
 
@@ -53,7 +55,7 @@ function buildPreviewCSS(
   return `linear-gradient(to right, ${parts.join(', ')})`;
 }
 
-export function TransitionEditor({ stops, transitionWidth, maxCycleLength, onChange, filamentColors }: TransitionEditorProps) {
+export function TransitionEditor({ stops, transitionWidth, maxCycleLength, onChange, filamentColors, layerHeightMm }: TransitionEditorProps) {
   const { t } = useTranslation();
 
   const updateStop = (index: number, patch: Partial<GradientStop>) => {
@@ -97,7 +99,7 @@ export function TransitionEditor({ stops, transitionWidth, maxCycleLength, onCha
       {/* Preview bar */}
       <div
         className="h-3 rounded-sm border border-gray-300 dark:border-gray-600"
-        style={{ background: buildPreviewCSS(stops, transitionWidth, maxCycleLength, filamentColors) }}
+        style={{ background: buildPreviewCSS(stops, transitionWidth, maxCycleLength, filamentColors, layerHeightMm) }}
       />
 
       {/* Stops editor */}

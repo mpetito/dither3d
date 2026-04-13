@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface NumericInputProps {
   value: number;
@@ -18,11 +18,13 @@ export function NumericInput({ value, onChange, min, max, step, className, integ
   const [text, setText] = useState(String(value));
   const [valid, setValid] = useState(true);
 
-  // Sync display text when external value prop changes
-  useEffect(() => {
+  // Sync display text when external value prop changes (state-based pattern)
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
     setText(String(value));
     setValid(true);
-  }, [value]);
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -58,6 +60,7 @@ export function NumericInput({ value, onChange, min, max, step, className, integ
       onChange={handleChange}
       onBlur={handleBlur}
       step={step}
+      aria-invalid={!valid || undefined}
       className={`${className ?? ''} ${!valid ? 'border-red-500' : ''}`}
     />
   );

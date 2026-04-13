@@ -61,7 +61,7 @@ export function useProcessing() {
             abortRef.current?.abort();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rawFileData, config, autoApply]);
+    }, [rawFileData, config, filamentColors, autoApply]);
 
     // Manual apply: immediate processing when manualApplyCount changes
     useEffect(() => {

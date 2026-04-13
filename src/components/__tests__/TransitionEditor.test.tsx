@@ -39,6 +39,7 @@ describe('TransitionEditor', () => {
         maxCycleLength={2}
         onChange={onChange}
         filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     expect(screen.getByText('Transition (2 stops)')).toBeInTheDocument();
@@ -53,6 +54,7 @@ describe('TransitionEditor', () => {
         maxCycleLength={2}
         onChange={onChange}
         filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     expect(screen.getByText('+ Add stop')).toBeInTheDocument();
@@ -67,6 +69,7 @@ describe('TransitionEditor', () => {
         maxCycleLength={2}
         onChange={onChange}
         filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     fireEvent.click(screen.getByText('+ Add stop'));
@@ -84,6 +87,7 @@ describe('TransitionEditor', () => {
         maxCycleLength={2}
         onChange={onChange}
         filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     const selects = screen.getAllByRole('combobox');
@@ -104,6 +108,7 @@ describe('TransitionEditor', () => {
         maxCycleLength={2}
         onChange={onChange}
         filamentColors={filamentColors}
+        layerHeightMm={0.12}
       />
     );
     const bar = container.querySelector('.h-3');

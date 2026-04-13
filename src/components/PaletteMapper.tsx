@@ -191,6 +191,7 @@ export function PaletteMapper() {
                   updatePalette(i, { ...mapping.outputPalette, ...update } as TransitionPalette)
                 }
                 filamentColors={filamentColors}
+                layerHeightMm={config.layerHeightMm}
               />
             )}
           </div>
